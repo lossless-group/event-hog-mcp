@@ -8,13 +8,12 @@ const base = import.meta.env.BASE_URL;
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="site-header__brand" href={base}>
-      <span class="brand__mark" aria-hidden="true">EH</span>
+      <img class="brand__mark" src={`${base}favicon.svg`} alt="" width="34" height="34" />
       <span class="brand__name">event-hog</span>
     </a>
     <nav class="site-header__nav" aria-label="Primary">
       <a href={`${base}#program`}>Program</a>
-      <a href={`${base}#passes`}>Passes</a>
-      <a href={`${base}#floor-plan`}>Floor plan</a>
+      <a href={`${base}#run-it`}>Run it</a>
       <a href={`${base}changelog/`}>Changelog</a>
       <a href={`${base}context-v/`}>Context</a>
       <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>
@@ -32,7 +31,7 @@ const base = import.meta.env.BASE_URL;
     top: 0;
     z-index: 50;
     background: var(--color-bg);
-    border-bottom: 3px solid var(--color-border-strong);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .site-header__inner {
@@ -64,18 +63,9 @@ const base = import.meta.env.BASE_URL;
   .site-header__brand:hover { text-decoration: none; }
 
   .brand__mark {
-    display: inline-grid;
-    place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: 50%;
-    background: var(--color-mascot);
-    color: var(--color__ink);
-    font-family: var(--font__mono);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0;
-    border: 2px solid var(--color-border-strong);
+    flex-shrink: 0;
   }
 
   .site-header__nav {
@@ -92,13 +82,13 @@ const base = import.meta.env.BASE_URL;
     color: var(--color-text-soft);
   }
   .site-header__nav a:hover {
-    color: var(--color-accent-warm);
+    color: var(--color-text);
     text-decoration: none;
   }
 
   @media (max-width: 960px) {
     .site-header__nav { gap: var(--space-3); }
-    .site-header__nav a:nth-child(-n+3) { display: none; }
+    .site-header__nav a:nth-child(-n+2) { display: none; }
   }
   @media (max-width: 640px) {
     .site-header__nav { display: none; }

@@ -1,8 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="10" y="4" width="44" height="56" rx="7" fill="#fbfaf6" stroke="#121317" stroke-width="4"/>
-  <rect x="24" y="10" width="16" height="5" rx="2.5" fill="#121317"/>
-  <rect x="10" y="44" width="44" height="16" rx="0" fill="#ff4d12"/>
-  <rect x="10" y="44" width="44" height="16" rx="7" fill="none" stroke="#121317" stroke-width="4"/>
-  <circle cx="32" cy="29" r="9" fill="#ff6f9f" stroke="#121317" stroke-width="3"/>
-  <circle cx="29" cy="29" r="1.6" fill="#121317"/><circle cx="35" cy="29" r="1.6" fill="#121317"/>
+  <!-- ears -->
+  <path d="M9 22 L12 4 L27 13 Z" fill="#f07a9e" stroke="#151515" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M55 22 L52 4 L37 13 Z" fill="#f07a9e" stroke="#151515" stroke-width="3" stroke-linejoin="round"/>
+  <!-- face -->
+  <circle cx="32" cy="36" r="25" fill="#f7a8c0" stroke="#151515" stroke-width="3"/>
+  <!-- eyes -->
+  <circle cx="23" cy="29" r="3" fill="#151515"/>
+  <circle cx="41" cy="29" r="3" fill="#151515"/>
+  <!-- snout -->
+  <ellipse cx="32" cy="43" rx="13" ry="9" fill="#f07a9e" stroke="#151515" stroke-width="3"/>
+  <ellipse cx="27.5" cy="43" rx="2.3" ry="3.6" fill="#151515"/>
+  <ellipse cx="36.5" cy="43" rx="2.3" ry="3.6" fill="#151515"/>
 </svg>

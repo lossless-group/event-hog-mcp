@@ -4,7 +4,7 @@
  */
 
 /**
- * Share image: the hero badge, rasterized to JPEG (JPEG, not WebP: several
+ * Share image: the hero and the before/during/after arc, rasterized to JPEG (JPEG, not WebP: several
  * unfurlers still drop WebP). Lives in public/, so the path is base-relative.
  */
 export const OG_IMAGES = {
@@ -13,7 +13,7 @@ export const OG_IMAGES = {
     width: 1200,
     height: 630,
     type: 'image/jpeg',
-    alt: 'event-hog: a conference badge reading "Hello, we are event-hog. Your team\'s memory at the show."',
+    alt: 'event-hog: Work the room. Keep everything. Before, during and after the event, in three columns.',
   },
 } as const;
 

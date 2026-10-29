@@ -67,6 +67,7 @@ const base = import.meta.env.BASE_URL;
       tags={tags}
     />
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />
     <link rel="sitemap" type="application/xml" href={`${base}sitemap-index.xml`} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -127,8 +128,8 @@ const base = import.meta.env.BASE_URL;
 
 <style>
   .site-footer {
-    margin-top: var(--space-24);
-    border-top: 3px solid var(--color-border-strong);
+    margin-top: var(--space-16);
+    border-top: 1px solid var(--color-border);
     background: var(--color-bg-soft);
     padding: var(--space-12) 0 var(--space-16);
   }
@@ -145,7 +146,7 @@ const base = import.meta.env.BASE_URL;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #fff;
-    background: var(--color__go);
+    background: var(--color__exit);
     padding: 4px 14px 2px;
     border-radius: var(--radius-sm);
   }
