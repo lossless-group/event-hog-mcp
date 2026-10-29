@@ -1,3 +1,4 @@
+// Fill in the <...> values for your own deployment (see README: Deploy your own).
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "event-hog",
@@ -5,9 +6,10 @@
   "compatibility_date": "2026-10-25",
   "compatibility_flags": ["nodejs_compat"],
   "artifacts": [
+    // One repo per event, plus the kit (event-hog-kit), in this namespace.
     { "binding": "ARTIFACTS", "namespace": "event-hog" },
-    // Shared skills and configuration, served to every client of this server.
-    { "binding": "BRAIN", "namespace": "hubspot-brain" }
+    // Your CRM deployment's brain: CRM-specific skills, read after the kit's.
+    { "binding": "BRAIN", "namespace": "<your-crm-brain-namespace>" }
   ],
   // event-hog-media: slide photos and other images, served at /media/<key>.
   // Repos keep the text (notes with the image's URL), not the image bytes.
@@ -17,20 +19,21 @@
     {
       "binding": "CRM",
       "database_name": "agnostic-crm",
-      "database_id": "acd49d55-854d-4891-920f-0730d98096f9",
+      "database_id": "<your D1 database id: npx wrangler d1 create agnostic-crm>",
       "migrations_dir": "migrations"
     }
   ],
   "vars": {
     // Which event repo tools use when the caller doesn't name one.
-    "DEFAULT_EVENT": "2026-10-7x24-exchange-fall",
+    "DEFAULT_EVENT": "<yyyy-mm-event-slug>",
     "NAMESPACE": "event-hog",
     "EVENT_TIMEZONE": "America/Chicago",
-    "BRAIN_NAMESPACE": "hubspot-brain",
+    "BRAIN_NAMESPACE": "<your-crm-brain-namespace>",
     "SKILLS_REPO": "agent-skills",
     // event-hog's own package: CRM-agnostic skills, the event template, skill config.
     "KIT_REPO": "event-hog-kit",
-    "PUBLIC_URL": "https://event-hog.tanujsiripurapu.workers.dev"
+    // This Worker's public URL. Capture pages, upload links and /media/ URLs use it.
+    "PUBLIC_URL": "https://event-hog.<your-subdomain>.workers.dev"
   }
   // Secrets (wrangler secret put):
   //   PEOPLE      JSON map of connector key -> { "name": "...", "email": "..." }

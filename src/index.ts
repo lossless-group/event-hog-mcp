@@ -37,7 +37,7 @@ export interface Env {
   /** Image host: slide photos and other media, served at /media/<key>. */
   MEDIA: any;
   /** Public base URL, for links the server hands out (capture pages, media). */
-  PUBLIC_URL?: string;
+  PUBLIC_URL: string;
 }
 
 export interface Person {

@@ -142,7 +142,7 @@ export const BRAND_TOOLS: any[] = [
     inputSchema: {
       type: "object",
       properties: {
-        brand: { type: "string", description: "Short name, e.g. edviro" },
+        brand: { type: "string", description: "Short name, e.g. acme" },
         markdown: { type: "string", description: "The full DESIGN.md" },
         why: { type: "string", description: "One line for the commit: drafted from site, refined, etc." },
       },

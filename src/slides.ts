@@ -364,7 +364,8 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
     const q = new URLSearchParams();
     if (args?.session) q.set("session", String(args.session));
     if (args?.event) q.set("event", String(args.event));
-    const base = env.PUBLIC_URL || "https://event-hog.tanujsiripurapu.workers.dev";
+    const base = env.PUBLIC_URL;
+    if (!base) throw new Error("PUBLIC_URL isn't set. Set it in wrangler.jsonc vars to this Worker's public URL and redeploy.");
     const link = `${base}/capture/${await captureToken(key)}${q.size ? `?${q}` : ""}`;
     return `${person.name}'s slide capture link (personal: saves under their name; fine to bookmark or add to the home screen):\n${link}\n\nOpen it on the phone, take or pick photos, then come back and say "write up my slides".`;
   },

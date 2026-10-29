@@ -194,7 +194,8 @@ export const UPLOAD_HANDLERS: Record<string, Handler> = {
       if (args?.note) ticket.no = String(args.note).slice(0, 1000);
     }
     const payload = b64url(new TextEncoder().encode(JSON.stringify(ticket)));
-    const base = env.PUBLIC_URL || "https://event-hog.tanujsiripurapu.workers.dev";
+    const base = env.PUBLIC_URL;
+    if (!base) throw new Error("PUBLIC_URL isn't set. Set it in wrangler.jsonc vars to this Worker's public URL and redeploy.");
     const url = `${base}/upload/${payload}.${await sign(key, payload)}`;
     return [
       `Upload link for ${person.name}: one use, expires in 15 minutes, ${kind}, .${f}.`,
