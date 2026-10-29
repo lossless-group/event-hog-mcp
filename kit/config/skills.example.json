@@ -1,0 +1,57 @@
+{
+  "_about": "Copy to config/skills.json in your event-hog-kit repo. get_config serves this file to every connector user: settings only, never credentials. People are keyed by the address their CRM knows them by (crm_email in PEOPLE, else email).",
+  "org": {
+    "augment-speakers-panelists": {
+      "research_tools": [
+        { "name": "builtin", "use_for": "search and opening pages", "how": "the chat app's own web search and browsing" }
+      ],
+      "limits": { "features_and_mentions": 10, "videos": 5, "lookback_years": 3 },
+      "save_to": "event-hog: save_speaker_profile"
+    },
+    "parallel-content-generation-starters": {
+      "voice_by_kind": { "blog": "company", "linkedin": "personal", "thread": "personal", "tweet": "personal" },
+      "company_voice": {
+        "who": "<Your Company>",
+        "tone": "<How the company sounds, in one or two sentences>",
+        "do": ["<A habit of the company's writing>"],
+        "dont": ["Hype words (revolutionary, game-changing, unlock)", "Claims about customers or deployments that aren't public"]
+      },
+      "discretion": [
+        "Public sessions and published material are fair game, with attribution",
+        "Hallway and booth conversations are private unless the note says shareable",
+        "Never name a prospect or say we met them without their OK",
+        "Nothing is posted from event-hog: drafts only, a person posts"
+      ]
+    },
+    "capture-slides": {
+      "image_host": {
+        "provider": "event-hog-media",
+        "what": "Cloudflare R2 bucket on this deployment's account, served by the event-hog Worker at /media/<key>",
+        "how": "Automatic: the capture page uploads there and writes image_url into the slide's notes. Nothing for the agent to do."
+      }
+    },
+    "maintain-design-system": {
+      "default_brand": "<your-brand>",
+      "brands": { "<your-brand>": { "company_url": "https://<your-company>.com" } }
+    }
+  },
+  "people": {
+    "<person@your-company.com>": {
+      "augment-speakers-panelists": {
+        "research_tools": [
+          { "name": "firecrawl", "use_for": "search and opening pages", "how": "firecrawl_search, then firecrawl_scrape on the URLs worth reading" },
+          { "name": "builtin", "use_for": "fallback", "how": "the chat app's own web search" }
+        ]
+      },
+      "parallel-content-generation-starters": {
+        "personal_voice": {
+          "who": "<Name>, posting as themselves",
+          "tone": "<How they sound>",
+          "do": [], "dont": ["Speaking for the company: company claims go in the company voice instead"],
+          "examples": []
+        },
+        "platforms": ["X", "LinkedIn"]
+      }
+    }
+  }
+}

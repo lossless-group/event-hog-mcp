@@ -1,0 +1,14 @@
+{
+  "_about": "Copy to config/private.json (gitignored) when using this skill without event-hog. With event-hog connected, the same shape comes from get_config. Facts only, no credentials: research tools carry their own auth in the client.",
+  "research_tools": [
+    { "name": "firecrawl", "use_for": "search and opening pages", "how": "firecrawl_search, then firecrawl_scrape on the URLs worth reading" },
+    { "name": "tavily", "use_for": "news and recent coverage", "how": "tavily_search with topic news" },
+    { "name": "builtin", "use_for": "fallback", "how": "the chat client's own web search" }
+  ],
+  "limits": {
+    "features_and_mentions": 10,
+    "videos": 5,
+    "lookback_years": 3
+  },
+  "save_to": "event-hog when connected, otherwise a markdown file in the user's event notes"
+}
