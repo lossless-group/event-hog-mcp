@@ -1,5 +1,9 @@
 # event-hog-mcp
 
+[![A conference badge on a blue lanyard: "Hello, we are event-hog. Your team's memory at the show." Work the room. Keep everything.](https://eventhog.cc/ogimage__Event-Hog--Banner.jpg)](https://eventhog.cc)
+
+**[eventhog.cc](https://eventhog.cc)**
+
 A team working a conference gets one shared workspace in Claude (Desktop,
 web, mobile) or Codex. It covers prep before, contacts, notes and slides
 during, and follow-ups after. You talk to it in plain words: "who is this?",
