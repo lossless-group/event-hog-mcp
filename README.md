@@ -35,6 +35,53 @@ the person in front of them.
 - **Your data is yours.** See [DATA-POLICY.md](DATA-POLICY.md).
 - **Given away.** Apache-2.0, with credit appreciated. See [License](#license).
 
+## What it does
+
+**Before the event**
+- **Reads the conference for you.** Give it the event's site. It reads the
+  agenda and the speaker and sponsor lists, and builds a prep map in
+  `prep/`: who's in the room, why they matter, which sessions count, and
+  how the team splits up. `new_event` starts the workspace and offers this
+  next (the `event-prep` skill).
+- **Researches speakers and panelists.** A thin event-app bio, often a
+  screenshot, becomes a sourced profile in `speakers/`. It checks their
+  social accounts first, then coverage, quotes, and video
+  (`augment-speakers-panelists`).
+
+**During the event**
+- **Keeps the contact list.** Log someone from a badge photo, a business
+  card, a voice memo, or two thumb-typed lines. Each person gets one file.
+  Every teammate's interactions append to it, so two people who met the
+  same person see each other's notes. Behind the files, a database keeps
+  people, organizations, who works where, interactions, observations, and
+  places. It answers "who have we met from this company?" or "who's in
+  Texas?". `Contacts__Met.csv` stays current.
+- **Writes ahead of you.** Before a session it drafts what you'll want:
+  flash cards for the acronyms and standards likely to come up, and post
+  drafts with `[gaps]` to fill in. After you log something, it fills them
+  in from your notes, in the company's voice or your own. It never invents
+  what was said (`parallel-content-generation-starters`).
+- **Captures slides, with metadata.** Each slide photo is shrunk to the
+  smallest size that's still legible, and its location data is stripped.
+  It gets notes: a verbatim transcript, the slide type, a one-sentence core
+  message, metrics as printed, claims worth checking, and alt text. Each
+  session gets a README that tells the talk slide by slide
+  (`capture-slides`).
+- **Keeps the team in step.** `event_brief`, `recent_activity`, and the
+  `daily-brief` prompt answer "who did we meet today, by whom, and which
+  priority targets has nobody found yet?".
+
+**After the event**
+- **Recreates slides in your brand.** A slide worth keeping is rebuilt as
+  a clean slide in your own design system, credited to its source, ready
+  for your own decks (`recreate-slides-in-brand`). If you don't have a
+  `DESIGN.md` yet, it drafts one from your company's site
+  (`maintain-design-system`).
+- **Shares the write-up.** Slide notes and recreated slides can be
+  published as a page at a link, for people who weren't there.
+- **Sends contacts on.** They go to your CRM after you approve, or to an
+  import file (see Three ways to run it).
+
 ## Three ways to run it
 
 Every way produces the same workspace (see
@@ -203,6 +250,10 @@ team can use it, never looked at or used commercially.
 - Every call clones the whole event repo. Fine for one event's worth of
   text; slower as repos grow.
 - The used-upload-link marker is check-then-write, not atomic.
+- `event-prep` isn't in `kit/` yet. It lives in
+  [lossless-agent-skills](https://github.com/lossless-group/lossless-agent-skills),
+  and it was written for our Twenty CRM. It needs an event-hog-shaped copy
+  in the kit.
 - The no-backend way has no skill of its own yet. The kit's skills name
   event-hog's tools, so without the server Claude has to follow the
   template's layout itself.
