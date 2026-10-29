@@ -22,8 +22,8 @@ tags:
 site_uuid: 2e0188ba-2fdc-4a2e-aa36-7a14e81de578
 hex_code: ksp2df
 summary: >-
-  Spec for how event-hog sends logged contacts to a team's CRM. One setting
-  per deployment picks the destination: csv (default, nothing to connect),
+  Spec for how event-hog sends logged contacts to a team's CRM. The team picks the
+  destination in its own settings, with a per-event override: csv (default, nothing to connect),
   hubspot (through hubspot-mcp-wrap, Worker to Worker), or twenty (later).
   The server, not the model, enforces preview-then-approve and records the
   ID the CRM actually returned. Read before touching crm_queue,
@@ -49,11 +49,39 @@ contacts to the CRM", sees the list, says yes, and gets links back.
 It has to work for teams that aren't us, so the CRM is a choice, and "no
 CRM" is a real option, not an error.
 
-## The one setting
+## Where data lives: always Cloudflare Artifacts
 
-Each deployment picks a destination in `wrangler.jsonc`:
+event-hog is built on Cloudflare Artifacts (plus D1 and R2) and stays that
+way: no storage abstraction. A team runs it one of two ways:
 
-| `CRM` | What happens | Needs |
+| | Your own Cloudflare account | Ours (fine for now) |
+|---|---|---|
+| Setup | Fork, fill in `wrangler.jsonc`, deploy | We add your team and send each person their connector link |
+| Your data | Never touches us | Stored in our account, under [[DATA-POLICY]]: not looked at, not used commercially |
+| Isolation | The account is the boundary | Each team gets its own Artifacts namespace (its own kit and event repos), media prefix and database. A connector key only ever reaches its own team |
+
+**Today one deployment serves one team.** Hosting several teams on ours
+needs the isolation in the right-hand column built first: a team per
+connector key, and every repo, file and query scoped to it.
+
+## The one setting, owned by the team
+
+The CRM choice belongs to the team, not to whoever runs the server, and an
+event can differ from the team's usual choice (a partner's event that
+feeds their CRM, say). So it lives in the team's own files:
+
+- **Team default:** `crm` in the team kit's `config/skills.json`, next to
+  their other settings.
+- **Per event:** `crm` in the event workspace's `prep/event.md`
+  frontmatter, written by `new_event` (it asks) and editable later. It wins
+  over the team default.
+- **Neither set:** `csv`.
+
+Connection details that aren't secrets (which HubSpot portal) sit beside the
+choice. Secrets never go in these files: HubSpot sign-ins stay inside
+hubspot-mcp-wrap, per person.
+
+| `crm` | What happens | Needs |
 |---|---|---|
 | `csv` (default) | Contacts stay in the workspace. `Contacts__Met.csv` is always current, and an import file for any CRM can be written on request | Nothing |
 | `hubspot` | Contacts are created in HubSpot, owned by the person who met them | hubspot-mcp-wrap deployed in the same Cloudflare account; each person signs in to HubSpot once |
@@ -123,3 +151,7 @@ Claude or Codex as a connector to work in HubSpot directly.
    or stay in event-hog?
 4. **Who may sync.** Anyone on the team, or only the person who logged the
    contact?
+5. **The shared database on ours.** The 2026-10-25 decision says one
+   database per client, with no tenant column. Hosting several teams means
+   either one D1 database per team (cleanest, more to provision) or a team
+   column on every table. Which?

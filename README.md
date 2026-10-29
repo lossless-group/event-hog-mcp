@@ -95,6 +95,12 @@ skills), which a model can fail to follow.
 - Nothing is ever posted publicly: drafts only.
 - Discretion rules for posts (hallway conversations stay private, and so on).
 
+## Your data
+
+On your own Cloudflare account, your data never reaches us. On the
+deployment we run, [DATA-POLICY.md](DATA-POLICY.md) applies: stored so your
+team can use it, never looked at or used commercially.
+
 ## Security model, plainly
 
 - **The connector URL is the credential.** Anyone with `…/mcp/<key>` acts as
