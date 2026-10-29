@@ -54,41 +54,51 @@ const LOST_AND_FOUND = [
 
 const PASSES = [
   {
-    tier: 'General Admission',
-    name: 'No backend',
-    ribbon: 'ga',
+    tier: 'All Access',
+    name: 'Use our Cloudflare',
+    ribbon: 'aa',
     gets: [
-      'Claude and the kit’s skills, nothing else',
-      'Claude writes the workspace in its sandbox',
-      'You get a zip of markdown files and a CSV',
+      'Copy one prompt, paste it into your agent, done',
+      'A shared workspace per event: git repo, database, image host',
+      'Attendee research with lead enrichment built in',
+      'Contacts, meetings and follow-ups go to your CRM after a yes',
     ],
-    needs: 'Nothing to deploy. Single player.',
+    needs: 'Nothing to deploy. Pick up your badge below.',
+    cta: { label: 'Copy the prompt', href: '#connect' },
   },
   {
     tier: 'Exhibitor',
-    name: 'Shared on Cloudflare Artifacts',
+    name: 'Self host',
     ribbon: 'ex',
     gets: [
-      'One git repo per event that the whole team writes to at once',
-      'Every write is a commit by the person who made it',
-      'A SQLite database (D1) for people, companies and places',
-      'An image host (R2) for slides and files',
+      'The same server, on your own Cloudflare account',
+      'Your data never reaches us',
+      'Your own people, your own enrichment key',
+      'Fork it and change anything',
     ],
-    needs: 'One Cloudflare Worker. Yours, or ours.',
-  },
-  {
-    tier: 'All Access',
-    name: 'Paired with your CRM',
-    ribbon: 'aa',
-    gets: [
-      'Contacts go on to your CRM after someone approves them',
-      'HubSpot works today, via hubspot-mcp-wrap or HubSpot’s connector',
-      'Any other CRM gets an import file',
-      'Next: pick a CRM once, sync with one approval',
-    ],
-    needs: 'A CRM connector next to event-hog in the chat.',
+    needs: 'A Cloudflare account with Artifacts, D1 and R2.',
+    cta: { label: 'Deploy your own', href: `${REPO_URL}#deploy-your-own` },
   },
 ];
+
+// ─── Registration: the connector the copy-a-prompt widget points at ─────
+const SERVER = import.meta.env.PUBLIC_EVENTHOG_SERVER ?? 'https://event-hog.tanujsiripurapu.workers.dev';
+const LINK = '__EVENTHOG_URL__';
+const PROMPT = [
+  'Connect me to event-hog, a shared workspace for working a conference: prep before, contacts during, follow-ups after.',
+  '',
+  'My personal event-hog connector URL is:',
+  LINK,
+  "It works like a password. Don't share it or post it anywhere.",
+  '',
+  'Step 1. Add it as a remote MCP server (Streamable HTTP, no sign-in) named "event-hog". Use whichever applies to you:',
+  `- Cursor: add "event-hog": { "url": "${LINK}" } under "mcpServers" in ~/.cursor/mcp.json (merge with what's there; create the file if it's missing). If the tools don't show up, tell me to toggle event-hog on in Cursor Settings > MCP.`,
+  `- Claude Code: run  claude mcp add --transport http event-hog ${LINK}`,
+  `- Codex: add these two lines to ~/.codex/config.toml:  [mcp_servers.event-hog]  and  url = "${LINK}"`,
+  '- Claude (web, desktop or mobile), ChatGPT, or any app where you can\'t add servers yourself: walk me through it, one step at a time. In Claude it\'s Settings > Connectors > Add custom connector, name it event-hog, paste the URL, then Add. I\'ll come back and say "done".',
+  '',
+  'Step 2. Once event-hog\'s tools are available, call its get_started tool and follow what it says. If they don\'t appear in this chat, tell me to start a new chat and say "Use event-hog: get started".',
+].join('\n');
 
 const BOOTHS = [
   { id: 'A1', path: 'prep/', what: 'Who’s in the room and why they matter', area: 'prep' },
@@ -137,8 +147,9 @@ const ASKED = [
             nobody stops a conversation to fill in a form.
           </p>
           <div class="hero__ctas">
-            <a class="btn btn-primary" href={REPO_URL} target="_blank" rel="noopener">Get the source</a>
+            <a class="btn btn-primary" href="#connect">Get connected</a>
             <a class="btn" href="#program">See the program</a>
+            <a class="btn" href={REPO_URL} target="_blank" rel="noopener">Get the source</a>
           </div>
           <p class="hero__fine mono">
             Apache-2.0 · first worked the floor at the 7x24 Exchange, Fall 2026
@@ -283,27 +294,81 @@ const ASKED = [
     <section class="section" id="passes">
       <div class="container">
         <div class="section__head">
-          <p class="folio" data-num="C">Three ways to run it</p>
+          <p class="folio" data-num="C">Two ways to run it</p>
           <h2 class="section__title">Pick your pass</h2>
           <p class="section__lede">
-            Every pass makes the same workspace, so you can start with nothing
-            and upgrade mid-week. The files come with you.
+            Both passes run the same server and make the same workspace: plain
+            markdown files, one per contact, and a CSV. Start on ours; move to
+            your own when you want the data on your account.
           </p>
         </div>
         <ol class="passes">
           {PASSES.map((p, i) => (
-            <li class={`pass pass--${p.ribbon}`} style={`--tilt:${[-1.4, 0.6, -0.4][i]}deg`}>
+            <li class={`pass pass--${p.ribbon}`} style={`--tilt:${[-1.2, 0.8][i]}deg`}>
               <span class="pass__slot" aria-hidden="true"></span>
-              <p class="pass__level mono">Level {i + 1}</p>
+              <p class="pass__level mono">Pass {i + 1}</p>
               <h3 class="pass__name">{p.name}</h3>
               <ul class="pass__gets">
                 {p.gets.map((g) => <li>{g}</li>)}
               </ul>
               <p class="pass__needs"><span class="eyebrow">Needs</span> {p.needs}</p>
+              <p class="pass__cta">
+                <a
+                  class={`btn ${i === 0 ? 'btn-primary' : ''}`}
+                  href={p.cta.href}
+                  {...(p.cta.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
+                >{p.cta.label}</a>
+              </p>
               <p class="pass__ribbon">{p.tier}</p>
             </li>
           ))}
         </ol>
+      </div>
+    </section>
+
+    <!-- ─── Registration: copy a prompt, get connected ───────────────── -->
+    <section class="section" id="connect">
+      <div class="container reg">
+        <div class="reg__intro">
+          <p class="folio" data-num="REG">Registration</p>
+          <h2 class="section__title">Pick up your badge</h2>
+          <p class="section__lede">
+            Copy this prompt and paste it into Claude, ChatGPT, Cursor, Claude
+            Code or Codex. It carries your own private link, and your agent
+            connects itself, or walks you through the two clicks.
+          </p>
+          <ol class="reg__steps">
+            <li>Your agent asks which company you represent and which conference you're going to.</li>
+            <li>It works out whether you're before, during or after the show, and picks up from there.</li>
+          </ol>
+        </div>
+
+        <div class="reg__desk" data-connect data-server={SERVER} data-template={PROMPT} data-placeholder={LINK}>
+          <p class="reg__label mono">Your setup prompt</p>
+          <textarea class="reg__prompt mono" readonly aria-label="Your setup prompt" data-prompt>Loading your link…</textarea>
+          <div class="reg__actions">
+            <button type="button" class="btn btn-primary" data-copy>Copy this prompt</button>
+            <button type="button" class="btn" data-copy-link>Copy just my link</button>
+          </div>
+          <details class="reg__manual">
+            <summary>Set it up by hand instead</summary>
+            <p>Your link: <code class="chip" data-link></code></p>
+            <ul>
+              <li><b>Claude</b> (web, desktop, mobile): Settings, Connectors, Add custom connector. Name it event-hog and paste your link.</li>
+              <li><b>Cursor</b>: add <code class="chip">"event-hog": {'{'} "url": "your link" {'}'}</code> under <code class="chip">mcpServers</code> in <code class="chip">~/.cursor/mcp.json</code>.</li>
+              <li><b>Claude Code</b>: <code class="chip">claude mcp add --transport http event-hog your-link</code></li>
+              <li><b>Codex</b>: in <code class="chip">~/.codex/config.toml</code>, add <code class="chip">[mcp_servers.event-hog]</code> with <code class="chip">url = "your link"</code>.</li>
+            </ul>
+          </details>
+          <p class="reg__fine">
+            Your link works like a password: anyone with it can write as you.
+            This browser remembers it, so come back here to copy it again.
+            Everything you log goes into a workspace shared with everyone on
+            this deployment. event-hog never posts or emails anything, and never
+            writes to your CRM by itself.
+            <button type="button" class="reg__fresh" data-fresh>Make me a new link</button>
+          </p>
+        </div>
       </div>
     </section>
 
@@ -396,6 +461,59 @@ const ASKED = [
     </section>
   </main>
 </BaseLayout>
+
+<script>
+  // The key is made here and kept in this browser. The server learns of it
+  // the first time an agent calls with it, and makes the person then.
+  const STORE = 'eventhog-key';
+  const desk = document.querySelector<HTMLElement>('[data-connect]');
+  if (desk) {
+    const { server = '', template = '', placeholder = '' } = desk.dataset;
+    const prompt = desk.querySelector<HTMLTextAreaElement>('[data-prompt]')!;
+    const linkEl = desk.querySelector<HTMLElement>('[data-link]')!;
+
+    const newKey = () =>
+      Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join('');
+    const key = () => {
+      let k: string | null = null;
+      try { k = localStorage.getItem(STORE); } catch {}
+      if (!k || !/^[a-f0-9]{48}$/.test(k)) {
+        k = newKey();
+        try { localStorage.setItem(STORE, k); } catch {}
+      }
+      return k;
+    };
+    let url = '';
+    const render = () => {
+      url = `${server}/mcp/${key()}`;
+      prompt.value = template.split(placeholder).join(url);
+      linkEl.textContent = url;
+    };
+    const copy = async (text: string, btn: HTMLButtonElement) => {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        prompt.focus();
+        prompt.select();
+        document.execCommand('copy');
+      }
+      const was = btn.textContent;
+      btn.textContent = 'Copied. Now paste it into your agent.';
+      setTimeout(() => { btn.textContent = was; }, 2500);
+    };
+
+    render();
+    desk.querySelector<HTMLButtonElement>('[data-copy]')!.onclick = (e) =>
+      copy(prompt.value, e.currentTarget as HTMLButtonElement);
+    desk.querySelector<HTMLButtonElement>('[data-copy-link]')!.onclick = (e) =>
+      copy(url, e.currentTarget as HTMLButtonElement);
+    desk.querySelector<HTMLButtonElement>('[data-fresh]')!.onclick = () => {
+      if (!confirm('Make a new link? Your agent keeps working with the old one; the new one starts as a new person.')) return;
+      try { localStorage.removeItem(STORE); } catch {}
+      render();
+    };
+  }
+</script>
 
 <style>
   /* ─── Shared section scaffolding ───────────────────────────────────── */
@@ -689,7 +807,8 @@ const ASKED = [
   /* ─── Passes ──────────────────────────────────────────────────────── */
   .passes {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 960px;
     gap: var(--space-8);
     align-items: stretch;
   }
@@ -723,7 +842,8 @@ const ASKED = [
   .pass__gets { display: grid; gap: var(--space-2); flex: 1; }
   .pass__gets li { padding-left: 1.3em; position: relative; color: var(--color-text-soft); font-size: 0.97rem; }
   .pass__gets li::before { content: '✓'; position: absolute; left: 0; color: var(--color-thread); font-weight: 700; }
-  .pass__needs { margin: var(--space-6) 0 var(--space-5); font-size: 0.9rem; display: grid; gap: 2px; }
+  .pass__needs { margin: var(--space-6) 0 var(--space-4); font-size: 0.9rem; display: grid; gap: 2px; }
+  .pass__cta { margin-bottom: var(--space-6); }
   .pass__ribbon {
     margin: 0 calc(var(--space-6) * -1);
     padding: 10px var(--space-6) 8px;
@@ -736,9 +856,71 @@ const ASKED = [
     text-align: center;
     color: #fff;
   }
-  .pass--ga .pass__ribbon { background: var(--color__concrete-500); }
   .pass--ex .pass__ribbon { background: var(--color__lanyard); }
   .pass--aa .pass__ribbon { background: var(--color__hi-vis); }
+
+  /* ─── Registration ───────────────────────────────────────────────── */
+  .reg {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: var(--space-12);
+    align-items: start;
+  }
+  .reg__steps { display: grid; gap: var(--space-3); margin-top: var(--space-6); counter-reset: step; }
+  .reg__steps li { position: relative; padding-left: 2.2em; color: var(--color-text-soft); counter-increment: step; }
+  .reg__steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.5em;
+    height: 1.5em;
+    display: grid;
+    place-items: center;
+    font-family: var(--font__mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    background: var(--color-accent-warm);
+    color: #fff;
+  }
+  .reg__desk {
+    padding: var(--space-6);
+    background: var(--color-bg-card);
+    border: 3px solid var(--color-border-strong);
+    box-shadow: 10px 10px 0 var(--color-accent-warm);
+  }
+  .reg__label { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: var(--space-3); }
+  .reg__prompt {
+    display: block;
+    width: 100%;
+    height: 220px;
+    padding: var(--space-4);
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--color-text);
+    background: var(--color-bg-soft);
+    border: 2px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+  .reg__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+  .reg__manual { margin-top: var(--space-5); color: var(--color-text-soft); font-size: 0.93rem; }
+  .reg__manual summary { cursor: pointer; font-weight: 700; color: var(--color-text); }
+  .reg__manual p, .reg__manual ul { margin-top: var(--space-3); }
+  .reg__manual li { margin-top: var(--space-2); }
+  .reg__manual .chip { white-space: normal; overflow-wrap: anywhere; }
+  .reg__fine { margin-top: var(--space-5); font-size: 0.85rem; color: var(--color-text-dim); }
+  .reg__fresh {
+    display: block;
+    margin-top: var(--space-3);
+    padding: 0;
+    font: inherit;
+    color: var(--color-accent);
+    text-decoration: underline;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
 
   /* ─── Floor plan ──────────────────────────────────────────────────── */
   .floor {
@@ -839,7 +1021,7 @@ const ASKED = [
 
   /* ─── Responsive ─────────────────────────────────────────────────── */
   @media (max-width: 980px) {
-    .hero__grid, .lf, .floor, .cta { grid-template-columns: 1fr; }
+    .hero__grid, .lf, .reg, .floor, .cta { grid-template-columns: 1fr; }
     .hero__badge-wrap { margin-top: 0; }
     .session { grid-template-columns: 7rem minmax(0, 1fr); }
     .session__side { grid-column: 2; grid-template-columns: auto auto; justify-content: start; gap: var(--space-5); }
