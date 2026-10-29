@@ -3,12 +3,10 @@
 The GitHub Pages site for event-hog-mcp:
 **https://lossless-group.github.io/event-hog-mcp/**
 
-It reads like venue wayfinding: sign yellow on black, condensed signage type,
-a faint floor-plan grid. Above the fold is the arc (before, during, after);
-below it, the program in detail, three ways to run it, the workspace, and the
-fine print. Light mode is the concourse, dark is after hours, vibrant is the
-departures board. The pig is the favicon and app icon (`public/favicon.svg`,
-`public/apple-touch-icon.png`).
+It's laid out like a conference: a lanyard badge in the hero, what event-hog
+does as the program, the three ways to run it as passes, and the workspace as
+a floor plan. Light mode is the show floor, dark is after hours, vibrant is
+the keynote.
 
 ## Local dev
 
@@ -30,8 +28,7 @@ with GitHub Pages (source: GitHub Actions). It runs only when `splash/`,
 | What | Where |
 |---|---|
 | The program (what event-hog does) | `src/content/program/*.md`, one file per session. `status: partial` with a `status_note` shows an "In progress" stamp |
-| The arc above the fold | Built from the program files, grouped by `phase` |
-| Ways to run it, workspace, fine print | `src/pages/index.astro` (arrays at the top) |
+| Hero, lost & found, passes, floor plan, fine print | `src/pages/index.astro` (arrays at the top) |
 | Changelog pages | `../changelog/*.md` |
 | Context pages | `../context-v/**/*.md`. Files with `publish: false` are skipped |
 | Titles and descriptions | `src/lib/seo.ts` |

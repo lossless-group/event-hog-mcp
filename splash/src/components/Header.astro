@@ -8,12 +8,13 @@ const base = import.meta.env.BASE_URL;
 <header class="site-header">
   <div class="container site-header__inner">
     <a class="site-header__brand" href={base}>
-      <img class="brand__mark" src={`${base}favicon.svg`} alt="" width="34" height="34" />
+      <img class="brand__mark" src={`${base}favicon.svg`} alt="" width="36" height="36" />
       <span class="brand__name">event-hog</span>
     </a>
     <nav class="site-header__nav" aria-label="Primary">
       <a href={`${base}#program`}>Program</a>
-      <a href={`${base}#run-it`}>Run it</a>
+      <a href={`${base}#passes`}>Passes</a>
+      <a href={`${base}#floor-plan`}>Floor plan</a>
       <a href={`${base}changelog/`}>Changelog</a>
       <a href={`${base}context-v/`}>Context</a>
       <a href={REPO_URL} target="_blank" rel="noopener">GitHub</a>
@@ -31,7 +32,7 @@ const base = import.meta.env.BASE_URL;
     top: 0;
     z-index: 50;
     background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 3px solid var(--color-border-strong);
   }
 
   .site-header__inner {
@@ -63,8 +64,8 @@ const base = import.meta.env.BASE_URL;
   .site-header__brand:hover { text-decoration: none; }
 
   .brand__mark {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
   }
 
@@ -82,13 +83,13 @@ const base = import.meta.env.BASE_URL;
     color: var(--color-text-soft);
   }
   .site-header__nav a:hover {
-    color: var(--color-text);
+    color: var(--color-accent-warm);
     text-decoration: none;
   }
 
   @media (max-width: 960px) {
     .site-header__nav { gap: var(--space-3); }
-    .site-header__nav a:nth-child(-n+2) { display: none; }
+    .site-header__nav a:nth-child(-n+3) { display: none; }
   }
   @media (max-width: 640px) {
     .site-header__nav { display: none; }
