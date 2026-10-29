@@ -1,14 +1,96 @@
 # event-hog-mcp
 
-A remote MCP server that gives a team working a conference one shared
-workspace in Claude (Desktop, web, mobile) or Codex: prep before, contacts,
-notes and slides during, follow-ups and CRM sync after. Every write is a git
-commit by the person who made it.
+A team working a conference gets one shared workspace in Claude (Desktop,
+web, mobile) or Codex. It covers prep before, contacts, notes and slides
+during, and follow-ups after. You talk to it in plain words: "who is this?",
+"log this person", "who have we met from Schneider?", "write up these slides".
 
-It runs as one Cloudflare Worker. First used for real at the 7x24 Exchange
-Fall Conference 2026 (San Antonio, Oct 25–28), with Edviro Energy.
+First used for real at the 7x24 Exchange Fall Conference 2026 (San Antonio,
+Oct 25–28), with Edviro Energy.
 
-## How it works
+## Why it exists
+
+A conference is days of conversations that matter, and most of them get
+lost. Badges get photographed and forgotten. Notes are split across four
+phones. Two teammates meet the same person and neither knows. Slides are
+photographed and never read again. By the time anyone opens the CRM, the
+week is a blur.
+
+event-hog keeps what the team learns while they're still in the room. It
+does that without asking anyone to fill in a form, or to stop talking to
+the person in front of them.
+
+## What we intend
+
+- **Plain files first.** The record is a folder of markdown files and one
+  CSV that anyone can read, with or without us. Databases and CRMs come
+  after it. They are views of that folder, and they can be rebuilt from
+  it.
+- **Credit and no clobbering.** Every entry says who wrote it and when. A
+  teammate's write adds to a file and never replaces it.
+- **The CRM is a destination, not a requirement.** Pick HubSpot, another
+  CRM, or none. With none, contacts stay as files and a CSV you can import
+  anywhere.
+- **Nothing gets posted.** event-hog drafts posts. A person posts them.
+- **Your data is yours.** See [DATA-POLICY.md](DATA-POLICY.md).
+- **Given away.** Apache-2.0, with credit appreciated. See [License](#license).
+
+## Three ways to run it
+
+Every way produces the same workspace (see
+[`kit/templates/event/`](kit/templates/event/)): `prep/`, `speakers/`,
+`contacts/` (one file per person), `notes/`, `slides/`, `drafts/`,
+`flash-cards/`, and `Contacts__Met.csv` at the root. Start simple and add
+connectors when the team needs them. The files carry over.
+
+### 1. No backend: a zip of markdown files
+
+One person, Claude, and the kit's skills. Claude writes the workspace as
+files in its own sandbox and hands it back as a zip. The zip holds
+semi-structured markdown with frontmatter and the CSV. There's nothing to
+deploy and nothing stored anywhere but your chat and your downloads.
+
+Good for trying it out, or for one person at a small event. The catch is
+that it's single player. Teammates can't see each other's contacts until
+someone merges the zips.
+
+### 2. Better: shared and versioned on Cloudflare Artifacts
+
+Deploy this server (one Cloudflare Worker) and give each teammate their own
+connector link. The workspace becomes a git repo on Cloudflare Artifacts
+that the whole team writes to at once. Every contact, note and slide write
+is a commit by the person who made it, so you get history, credit and undo.
+
+Two more pieces come with the server:
+- **A structured database (SQLite, on Cloudflare D1).** It holds people,
+  organizations, who works where, who met whom, and nested locations. It
+  answers questions like "who have we met from this company?" or "who's in
+  Texas?". It's kept in step with the files.
+- **An image host (Cloudflare R2).** Slide photos and other files live here
+  at a link. Workspace files keep the link, not the image.
+
+### 3. Best: paired with your CRM
+
+Add a CRM connector next to event-hog in the same chat, and contacts can go
+on to your CRM. Each one is proposed first and created only after a person
+approves.
+
+- **HubSpot works today.** Pair event-hog with
+  [hubspot-mcp-wrap](https://github.com/lossless-group/hubspot-mcp-wrap)
+  (our OAuth front door to HubSpot's MCP server) or HubSpot's own
+  connector. Claude carries each contact across and records the HubSpot ID.
+- **Any other CRM:** `export_hubspot_csv` writes an import file, and
+  `Contacts__Met.csv` is always current.
+- **Next:** the team picks its CRM once, and event-hog syncs to it itself,
+  with one preview and one approval. See
+  [`context-v/specs/Pick-a-CRM-and-Go.md`](context-v/specs/Pick-a-CRM-and-Go.md).
+
+## Working on it with us
+
+See [COLLABORATE.md](COLLABORATE.md): how to fork, what to review first,
+and the rules for keeping real event data out of the repo.
+
+## How the server works
 
 Three layers, each with one job (the full reasoning is in
 [`context-v/decisions/2026-10-25_Three-Layers-and-an-Agnostic-CRM-for-Event-Hog.md`](context-v/decisions/2026-10-25_Three-Layers-and-an-Agnostic-CRM-for-Event-Hog.md)):
@@ -121,6 +203,9 @@ team can use it, never looked at or used commercially.
 - Every call clones the whole event repo. Fine for one event's worth of
   text; slower as repos grow.
 - The used-upload-link marker is check-then-write, not atomic.
+- The no-backend way has no skill of its own yet. The kit's skills name
+  event-hog's tools, so without the server Claude has to follow the
+  template's layout itself.
 - Not yet verified end to end: a slide sent with `upload_link` from Claude's
   sandbox, which also needs the Claude org admin to allow this Worker's host
   for code execution.
