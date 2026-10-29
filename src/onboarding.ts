@@ -74,7 +74,7 @@ function matchEvents(list: Instance[], q: string): { i: Instance; score: number 
     .sort((a, b) => b.score - a.score);
 }
 
-function todayIn(zone: string | null, fallback: string): string {
+export function todayIn(zone: string | null, fallback: string): string {
   try {
     return new Intl.DateTimeFormat("en-CA", { timeZone: zone || fallback }).format(new Date());
   } catch {
@@ -82,9 +82,9 @@ function todayIn(zone: string | null, fallback: string): string {
   }
 }
 
-type Phase = "before" | "during" | "after";
+export type Phase = "before" | "during" | "after";
 
-function guessPhase(i: Instance, today: string): Phase | null {
+export function guessPhase(i: Pick<Instance, "starts_on" | "ends_on">, today: string): Phase | null {
   if (!i.starts_on) return null;
   const end = i.ends_on || i.starts_on;
   if (today < i.starts_on) return "before";
@@ -121,6 +121,7 @@ function beforePlaybook(i: Instance, person: Person, today: string, targets: num
     `4. Rank it. Load get_skill prioritize-attendees and follow it: screen on title and company, look the likely fits up with enrich_people (25 at a time), use web search for the company check, the reason to talk, and anyone not found, then classify buyer, champion, partner or referral, score A, B or C, and save with save_targets.${targets ? ` (${targets} target(s) already saved for this event: run targets first to see them.)` : ""}`,
     "5. Show the person their 'most useful to find' list: the top 10 to 15, one line each on why and how to spot them (title, booth, session).",
     "6. Close with how the event itself works: during it, they just tell you who they met.",
+    '7. Then offer what else helps before the show, as things they can say: "who is <speaker>?", "quiz me on the acronyms", "draft a post saying we\'ll be there". what_can_i_do has the full menu.',
   ].join("\n");
 }
 
@@ -137,7 +138,7 @@ async function duringPlaybook(env: Env, i: Instance, person: Person, today: stri
     "- Session takeaways: just tell you; you save them with add_note.",
     capture ? `- Slides: their personal camera page, ${capture} (bookmark it; photos save under their name). Then "write up my slides".` : "- Slides: call slide_capture_link for their personal camera page.",
     '- End of day: "daily brief".',
-    "Then ask who they've met so far today.",
+    "Then ask who they've met so far today. After each thing they log, suggest one next step in a line (who to find next, a follow-up draft, the slide camera); what_can_i_do has the full menu.",
   ].join("\n");
 }
 
@@ -183,6 +184,8 @@ async function afterPlaybook(env: Env, i: Instance, person: Person, today: strin
     "3. Draft the follow-up emails. Load get_skill draft-follow-up-emails and follow it: one email per person from what was actually said, saved with save_draft (kind: email). Nothing is sent.",
     "",
     "4. Sending at scale. For more than a handful, point them to Origami (https://origami.chat): it enriches leads (emails, firmographics) and runs email campaigns, with a person approving the send. Its MCP server is https://mcp.origami.chat with an Origami API key (Settings > Developers). If it's connected here, offer to load the approved drafts into a campaign.",
+    "",
+    '5. Don\'t stop at the CRM. Offer, as things they can say: "recreate that slide in our brand", "turn my notes into a LinkedIn post", "share the write-up with the team". what_can_i_do has the full menu.',
   ].join("\n");
 }
 

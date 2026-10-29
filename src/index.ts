@@ -23,6 +23,7 @@ import { EVENT_TOOLS, EVENT_HANDLERS, withCurrentEvent, forEvent, eventsTable } 
 import { UPLOAD_TOOLS, UPLOAD_HANDLERS, handleUpload } from "./uploads";
 import { ONBOARDING_TOOLS, ONBOARDING_HANDLERS, ONBOARDING_PROMPTS } from "./onboarding";
 import { ENRICH_TOOLS, ENRICH_HANDLERS } from "./enrich";
+import { SUGGESTION_TOOLS, SUGGESTION_HANDLERS, NEXT_STEPS } from "./suggestions";
 import { landingPage, connectorPage } from "./landing";
 
 export interface Env {
@@ -83,6 +84,7 @@ const INSTRUCTIONS = `event-hog is a shared workspace for a team working an even
 
 How to use it:
 - First time, or when someone says "get started" or "set me up": call get_started and follow what it returns. It asks which company they represent and which conference they're going to, then gives the playbook for before, during, or after the event. If whoami says the connector has no name yet, do this before anything else.
+- Keep the person moving: end every reply with one short line of 2 or 3 things they could say next, in their words, not tool names (e.g. 'You could also say: "who should I find next?" · "write up my slides"'). Fit them to the phase (before: who to find, speakers, jargon; during: log people, who's next, slides, daily brief; after: follow-ups, CRM, emails, posts). Tool results often end with a "Next:" list to pick from; once a conversation, suggest something they haven't used yet (badge photos, the slide camera, flash cards, enrichment, CRM sync). If they ask what event-hog can do or seem unsure, call what_can_i_do. Skip the line while they're logging people rapid-fire.
 - Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
 - Starters: whenever someone logs a contact, adds a note, or saves a speaker profile, load parallel-content-generation-starters (once per conversation) and follow it. Answer the person first; starters come after, short, and never block logging. Flash cards for acronyms, vocabulary, concepts and market standards go in the shared deck with save_flash_cards; flash_cards reads it. Post drafts (tweets, threads, LinkedIn, blog) go in drafts/ with save_draft and add_to_draft, in the company voice for official pieces and the person's own voice for theirs (get_config). Nothing is ever posted from here.
 - Slides and other images: an image attached in chat can't be passed to a tool. If you have a code-execution sandbox, the attachment is a file there: upload_link gives a one-time URL to send it to the event's image host with curl (slides become slides waiting for notes; badges, cards, photos and PDFs return a /media/ URL to put in the contact or note). If the sandbox can't reach the host, or there is none, give the person their slide_capture_link (a camera page that shrinks and saves photos under their name) and don't retry the upload. Then list slides needing notes, look at each with view_slide, and write them up with save_slide_notes (load the capture-slides skill first).
@@ -226,8 +228,8 @@ async function handle(msg: any, env: Env, person: Person): Promise<any | null> {
         try {
           const out = await tool(params?.arguments ?? {}, await forEvent(env, params?.arguments?.event), person);
           if (typeof out !== "string") return reply(out);
-          const nudge = STARTER_NUDGES[params?.name];
-          return reply({ content: [{ type: "text", text: nudge ? `${out}\n\n${nudge}` : out }] });
+          const extras = [STARTER_NUDGES[params?.name], NEXT_STEPS[params?.name]].filter(Boolean);
+          return reply({ content: [{ type: "text", text: [out, ...extras].join("\n\n") }] });
         } catch (err: any) {
           return reply({ content: [{ type: "text", text: `Error: ${err?.message ?? String(err)}` }], isError: true });
         }
@@ -747,7 +749,7 @@ const BASE_TOOLS = [
   },
 ];
 
-const TOOLS = [...ONBOARDING_TOOLS, ...ENRICH_TOOLS, ...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS, ...BRAND_TOOLS, ...EVENT_TOOLS, ...UPLOAD_TOOLS];
+const TOOLS = [...ONBOARDING_TOOLS, ...SUGGESTION_TOOLS, ...ENRICH_TOOLS, ...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS, ...BRAND_TOOLS, ...EVENT_TOOLS, ...UPLOAD_TOOLS];
 
 // Most tools answer in text; a few (view_slide) return MCP content blocks, e.g. an image.
 export type Handler = (args: any, env: Env, person: Person) => Promise<string | { content: any[] }>;
@@ -757,6 +759,7 @@ const ev = (args: any, env: Env) => (args?.event ? String(args.event) : env.DEFA
 const HANDLERS: Record<string, Handler> = {
   ...ONBOARDING_HANDLERS,
   ...ENRICH_HANDLERS,
+  ...SUGGESTION_HANDLERS,
   ...CRM_HANDLERS,
   ...LOCATION_HANDLERS,
   ...SKILL_HANDLERS,
