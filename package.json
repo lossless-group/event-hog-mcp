@@ -2,6 +2,7 @@
   "name": "event-hog-mcp",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Remote MCP server over Cloudflare Artifacts: a shared, git-backed event workspace a team can prep and log contacts into from Claude Desktop and mobile.",
   "type": "module",
   "scripts": {

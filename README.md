@@ -151,3 +151,8 @@ npm run check    # tsc --noEmit
 
 Commit messages follow the
 [Lossless git conventions](https://github.com/lossless-group/lossless-agent-skills/tree/main/git-conventions).
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE). Keep [NOTICE](NOTICE) in any copy or fork:
+it credits The Lossless Group.
