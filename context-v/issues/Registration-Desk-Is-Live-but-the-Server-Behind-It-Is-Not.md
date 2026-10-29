@@ -37,6 +37,16 @@ related:
 
 > **Status: Open, not started.** Written 2026-10-29, right after pulling PR #1.
 
+> **Update, 2026-10-29 afternoon (Tanuj):** the Worker half is deployed.
+> Migration 0006 was already on `agnostic-crm`; 0007 was applied, and
+> `event-hog` was deployed from `82d8e86` (PR #1's head) at 05:53 UTC, from
+> a git-ignored `wrangler.event-hog.jsonc`, with `CONTEXT_DEV_API_KEY` set.
+> Checked at 19:40 UTC: a brand-new key gets `initialize` and `whoami`
+> (as a guest who should run `get_started`), and `enrich_people` answers.
+> The "Unknown connector key" check above likely ran against a cached or
+> older response; if it still fails for you, send the key's first 6
+> characters. What's left is the decision below.
+
 ## What's wrong
 
 PR #1 ("self-serve onboarding", merged as `cad4c52`) changed two things
@@ -117,7 +127,7 @@ undeployed, which is today's state: links fail and nothing gets written).
 ## Done when
 
 - [ ] Someone decided which deployment the public desk points at
-- [ ] Migrations 0006 and 0007 applied to that deployment's D1
-- [ ] That Worker is deployed from `cad4c52` or later
-- [ ] A fresh key from eventhog.cc connects and `get_started` answers
+- [x] Migrations 0006 and 0007 applied to that deployment's D1
+- [x] That Worker is deployed from `cad4c52` or later (its content: `82d8e86`)
+- [x] A fresh key from eventhog.cc connects and `get_started` answers
 - [ ] An existing `PEOPLE` key still works

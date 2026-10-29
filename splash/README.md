@@ -43,7 +43,7 @@ with GitHub Pages (source: GitHub Actions). It runs only when `splash/`,
 | Context pages | `../context-v/**/*.md`. Files with `publish: false` are skipped |
 | Titles and descriptions | `src/lib/seo.ts` |
 | Share images | `public/ogimage__Event-Hog--{Banner,BannerTall,BannerTallMax,Portrait,PortraitTall,Square}.jpg`, rendered from `og-source/og.html?f=<format>` at each format's exact size. Older versions go in `.ogimage-archive/` |
-| Icons | `public/favicon.svg` (the pig) and `public/apple-touch-icon.png` (180px, rasterized from it) |
+| Icons | `public/favicon.svg` (the pig) is the source. Rasterized from it: `favicon.ico` (16, 32, 48), `favicon-96x96.png`, `apple-touch-icon.png` (180), and `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` for `site.webmanifest`. Redraw the SVG, then re-render all of them |
 
 Keep the fine print in step with the README's "What the server guarantees"
 section. If one changes, change the other.

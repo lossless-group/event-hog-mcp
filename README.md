@@ -239,6 +239,11 @@ unconfirmed at 40 to 69). Every answer, misses included, is cached in the
 costs 20 credits and a miss is free (the free tier is 1,000 credits a month).
 Without the key, or out of credits, it tells the agent to use web search.
 
+**Next steps:** `what_can_i_do` lists what the person can say right now, for
+before, during or after the event. Most tools also end their result with a
+"Next:" line of follow-on offers, and the server asks the agent to close each
+reply with two or three of them, so nobody has to know the tool list.
+
 **Workspace:** `event_brief`, `list_events`, `new_event`,
 `whoami`, `list_files`, `read_file`, `search`, `recent_activity`,
 `append_to_file`, `add_note`.
