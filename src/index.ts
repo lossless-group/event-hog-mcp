@@ -17,10 +17,13 @@ import { CRM_TOOLS, CRM_HANDLERS, recordContact, recordCrmLink } from "./crm";
 import { LOCATION_TOOLS, LOCATION_HANDLERS } from "./locations";
 import { SKILL_TOOLS, SKILL_HANDLERS, SKILL_PROMPTS } from "./skills";
 import { STARTER_TOOLS, STARTER_HANDLERS, STARTER_PROMPTS, STARTER_NUDGES } from "./starters";
-import { SLIDE_TOOLS, SLIDE_HANDLERS, SLIDE_PROMPTS, handleCapture, serveMedia } from "./slides";
+import { SLIDE_TOOLS, SLIDE_HANDLERS, SLIDE_PROMPTS, handleCapture, serveMedia, captureToken } from "./slides";
 import { BRAND_TOOLS, BRAND_HANDLERS, BRAND_PROMPTS } from "./brand";
 import { EVENT_TOOLS, EVENT_HANDLERS, withCurrentEvent, forEvent, eventsTable } from "./events";
 import { UPLOAD_TOOLS, UPLOAD_HANDLERS, handleUpload } from "./uploads";
+import { ONBOARDING_TOOLS, ONBOARDING_HANDLERS, ONBOARDING_PROMPTS } from "./onboarding";
+import { ENRICH_TOOLS, ENRICH_HANDLERS } from "./enrich";
+import { landingPage, connectorPage } from "./landing";
 
 export interface Env {
   ARTIFACTS: any;
@@ -38,6 +41,10 @@ export interface Env {
   MEDIA: any;
   /** Public base URL, for links the server hands out (capture pages, media). */
   PUBLIC_URL: string;
+  /** Where GET / sends people, if the copy-a-prompt page lives elsewhere (eventhog.cc). Unset: this Worker serves its own. */
+  HOME_URL?: string;
+  /** Secret: context.dev key behind enrich_people. Without it the tool says to use web search. */
+  CONTEXT_DEV_API_KEY?: string;
 }
 
 export interface Person {
@@ -48,6 +55,14 @@ export interface Person {
   emails?: string[];
   /** The address their CRM (HubSpot) knows them by: owners and "created by" match on it. */
   crm_email?: string;
+  /** The connector key this request came in on. */
+  key?: string;
+  /** The company they represent at events, and who buys from it. */
+  company?: string;
+  company_url?: string;
+  ideal_customer?: string;
+  /** A self-serve connector that hasn't saved a name yet. */
+  guest?: boolean;
 }
 
 /** The address to use anywhere a CRM attributes work to this person. */
@@ -67,6 +82,7 @@ const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS = `event-hog is a shared workspace for a team working an event together: prep before, contacts and notes during, follow-ups after. Every write is a git commit attributed to the person using this connector.
 
 How to use it:
+- First time, or when someone says "get started" or "set me up": call get_started and follow what it returns. It asks which company they represent and which conference they're going to, then gives the playbook for before, during, or after the event. If whoami says the connector has no name yet, do this before anything else.
 - Skills: list_skills shows the team's playbooks; get_skill loads one before doing that kind of work (e.g. augment-speakers-panelists when someone shares a speaker card or asks who a speaker is). get_config returns this person's and the organization's settings for a skill, such as which research tools to use.
 - Starters: whenever someone logs a contact, adds a note, or saves a speaker profile, load parallel-content-generation-starters (once per conversation) and follow it. Answer the person first; starters come after, short, and never block logging. Flash cards for acronyms, vocabulary, concepts and market standards go in the shared deck with save_flash_cards; flash_cards reads it. Post drafts (tweets, threads, LinkedIn, blog) go in drafts/ with save_draft and add_to_draft, in the company voice for official pieces and the person's own voice for theirs (get_config). Nothing is ever posted from here.
 - Slides and other images: an image attached in chat can't be passed to a tool. If you have a code-execution sandbox, the attachment is a file there: upload_link gives a one-time URL to send it to the event's image host with curl (slides become slides waiting for notes; badges, cards, photos and PDFs return a /media/ URL to put in the contact or note). If the sandbox can't reach the host, or there is none, give the person their slide_capture_link (a camera page that shrinks and saves photos under their name) and don't retry the upload. Then list slides needing notes, look at each with view_slide, and write them up with save_slide_notes (load the capture-slides skill first).
@@ -79,7 +95,7 @@ How to use it:
 - recent_activity shows what teammates logged and when.
 - Locations are human-defined and nested (define_location); a person or org can have many (link_location), and who_is_in finds everyone inside a place, nested places included.
 - query_crm answers structured questions (who at an org have we met, which orgs relate to which, open follow-ups) from the agnostic-crm database, which log_contact keeps in step with the files.
-- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending. Each pending contact shows who logged it and their HubSpot email: make that HubSpot user the contact owner (find them with search_owners by that email). Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. Never mark something synced that wasn't created.
+- CRM: contacts start as hubspot_status pending. If the user has a HubSpot connector, crm_queue lists what's pending: everyone the team met by default, or only the contacts certain people met with met_by (["me"], or ["me", "Michael"]). Each pending contact shows who logged it and their HubSpot email: make that HubSpot user the contact owner (find them with search_owners by that email). Propose the HubSpot records, create them only after the user approves, then call mark_crm_synced with the HubSpot ID. crm_queue also lists conversations not yet in HubSpot: log each as a completed meeting associated with the contact (owned by whoever had it) and each follow-up as a task, then call mark_touchpoints_synced with their IDs. Never mark something synced that wasn't created.
 - If the HubSpot connection isn't working (no HubSpot connector, sign-in fails, or HubSpot calls error), don't keep retrying and don't stop logging. log_contact is the raw record: it saves every contact to the shared files and the agnostic-crm database whether or not HubSpot works. At each stopping point (end of a conversation, a break, end of the day) run export_hubspot_csv: it writes everyone still pending into a HubSpot-ready import file, committed under exports/, for a bulk import later. Tell the user that's what happened.`;
 
 // ---------------------------------------------------------------- entry point
@@ -98,13 +114,16 @@ export default {
     const match = url.pathname.match(/^\/mcp\/([A-Za-z0-9_-]{16,})\/?$/);
 
     if (url.pathname === "/" && request.method === "GET") {
-      return new Response("event-hog MCP server. Add <this host>/mcp/<your key> to Claude as a custom connector.\n", {
-        headers: { "content-type": "text/plain; charset=utf-8" },
-      });
+      return env.HOME_URL ? Response.redirect(env.HOME_URL, 302) : landingPage(url.origin);
     }
     if (!match) return new Response("Not found", { status: 404 });
 
-    const person = people(env)[match[1]];
+    // Someone opened their connector link in a browser: explain it, create nothing.
+    if (request.method === "GET" && (request.headers.get("accept") ?? "").includes("text/html")) {
+      return connectorPage(`${url.origin}/mcp/${match[1]}`, env.HOME_URL ?? "/");
+    }
+
+    const person = await resolvePerson(env, match[1]);
     if (!person) return new Response("Unknown connector key", { status: 401 });
 
     if (request.method !== "POST") {
@@ -137,6 +156,45 @@ export function people(env: Env): Record<string, Person> {
   } catch {
     return {};
   }
+}
+
+// Keys the landing page mints in the browser: 24 random bytes as hex.
+const SELF_SERVE_KEY = /^[a-f0-9]{48}$/;
+
+export function memberPerson(row: any): Person {
+  const key = String(row.key);
+  return {
+    key,
+    name: row.name || `Guest ${key.slice(0, 4)}`,
+    email: row.email || `guest-${key.slice(0, 8)}@eventhog.invalid`,
+    company: row.company || undefined,
+    company_url: row.company_url || undefined,
+    ideal_customer: row.ideal_customer || undefined,
+    guest: !row.name,
+  };
+}
+
+// The PEOPLE secret first, then the members table. An unknown key in the
+// landing page's format becomes a new guest member on its first call.
+export async function resolvePerson(env: Env, key: string): Promise<Person | null> {
+  const listed = people(env)[key];
+  let row: any = null;
+  try {
+    row = await env.CRM.prepare("SELECT * FROM members WHERE key = ?").bind(key).first();
+  } catch {
+    // No members table yet: only PEOPLE connectors work.
+    return listed ? { ...listed, key } : null;
+  }
+  if (listed) {
+    const extra = row ? memberPerson(row) : null;
+    return { ...listed, key, company: extra?.company, company_url: extra?.company_url, ideal_customer: extra?.ideal_customer };
+  }
+  if (row) return memberPerson(row);
+  if (!SELF_SERVE_KEY.test(key)) return null;
+  await env.CRM.prepare("INSERT OR IGNORE INTO members (key, capture_token, created_at) VALUES (?, ?, ?)")
+    .bind(key, await captureToken(key), new Date().toISOString())
+    .run();
+  return memberPerson({ key });
 }
 
 // ---------------------------------------------------------------- JSON-RPC
@@ -208,7 +266,13 @@ export type Space = "event" | "brain";
 
 export async function open(env: Env, event: string, scope: "read" | "write", space: Space = "event"): Promise<Workspace> {
   const ns = space === "brain" ? env.BRAIN_NAMESPACE : env.NAMESPACE;
-  const repo = await (space === "brain" ? env.BRAIN : env.ARTIFACTS).get(event);
+  let repo: any;
+  try {
+    repo = await (space === "brain" ? env.BRAIN : env.ARTIFACTS).get(event);
+  } catch (err: any) {
+    if (space === "brain" || event === env.KIT_REPO) throw err;
+    throw new Error(`There's no event workspace called "${event}" yet. Run get_started (or list_events, or new_event to start one).`);
+  }
   try {
     const info = await repo.info();
     const remote: string =
@@ -421,6 +485,105 @@ async function refreshContactsCsv(ws: Workspace): Promise<{ path: string; rows: 
   return { path: CONTACTS_CSV, rows: files.length, csv };
 }
 
+// ---------------------------------------------------------------- who met whom
+
+type Logger = { name: string; email: string };
+const PLACEHOLDER_EMAIL = /@eventhog\.invalid$/i;
+const sameLogger = (a: Logger, b: Logger) =>
+  (!!a.email && !!b.email && a.email === b.email) || (!!a.name && a.name.toLowerCase() === b.name.toLowerCase());
+
+// Everyone who logged a touchpoint with each contact at this event: the
+// database's interactions (name and CRM email per touchpoint), the file's
+// first logger, and the file's touchpoint headings (names only).
+async function contactLoggers(env: Env, event: string, ws: Workspace): Promise<{ files: string[]; byFile: Map<string, Logger[]> }> {
+  const byFile = new Map<string, Logger[]>();
+  const add = (f: string, l: Logger) => {
+    if (!l.name && !l.email) return;
+    const list = byFile.get(f) ?? [];
+    const known = list.find((x) => sameLogger(x, l));
+    if (!known) list.push(l);
+    else if (!known.email && l.email) known.email = l.email;
+    byFile.set(f, list);
+  };
+  try {
+    const { results } = await env.CRM.prepare(
+      `SELECT i.artifact_path AS path, i.logged_by AS name, i.logged_by_email AS email
+         FROM interactions i JOIN event_instances e ON e.id = i.event_instance_id
+        WHERE e.slug = ? AND i.artifact_path IS NOT NULL`,
+    )
+      .bind(event)
+      .all();
+    for (const r of (results ?? []) as any[]) add(r.path, { name: String(r.name ?? ""), email: String(r.email ?? "").toLowerCase() });
+  } catch {
+    // The files alone still say who logged what.
+  }
+  const files = (await walk(ws, "contacts")).filter((f) => f.endsWith(".md"));
+  for (const f of files) {
+    const { front, body } = parseFront((await read(ws, f)) ?? "");
+    add(f, { name: String(front.first_logged_by ?? ""), email: String(front.first_logged_by_email ?? "").toLowerCase() });
+    for (const m of body.matchAll(/^### (.+?) · (.+)$/gm)) add(f, { name: m[2].trim(), email: "" });
+  }
+  return { files, byFile };
+}
+
+// met_by: names, emails, or "me". Each must pick out exactly one person who
+// logged someone at this event, so "Michael" can't silently mean two people.
+function metByFilter(wanted: unknown, person: Person, byFile: Map<string, Logger[]>): { keep: (f: string) => boolean; who: Logger[] } | null {
+  const asked = (Array.isArray(wanted) ? wanted : wanted ? [wanted] : []).map((w) => String(w).trim()).filter(Boolean);
+  if (!asked.length) return null;
+  const everyone: Logger[] = [];
+  for (const list of byFile.values()) for (const l of list) if (!everyone.some((x) => sameLogger(x, l))) everyone.push(l);
+  const roster = () => everyone.map((l) => `${l.name}${l.email && !PLACEHOLDER_EMAIL.test(l.email) ? ` <${l.email}>` : ""}`).join(", ") || "nobody yet";
+  const mine = identities(person);
+  const who: Logger[] = [];
+  for (const w of asked) {
+    const q = w.toLowerCase();
+    let hits: Logger[];
+    if (["me", "mine", "myself"].includes(q)) {
+      hits = everyone.filter((l) => mine.includes(l.email) || l.name.toLowerCase() === person.name.toLowerCase());
+      if (!hits.length) hits = [{ name: person.name, email: crmEmail(person) }];
+    } else if (q.includes("@")) {
+      hits = everyone.filter((l) => l.email === q);
+    } else {
+      hits = everyone.filter((l) => l.name.toLowerCase() === q);
+      if (!hits.length) {
+        const words = q.split(/\s+/);
+        hits = everyone.filter((l) => words.every((wd) => l.name.toLowerCase().split(/\s+/).includes(wd)));
+      }
+    }
+    const distinct = hits.filter((l, i) => hits.findIndex((x) => sameLogger(x, l)) === i);
+    if (!distinct.length) throw new Error(`Nobody called "${w}" has logged contacts at this event. People who have: ${roster()}.`);
+    if (distinct.length > 1) {
+      const names = distinct.map((l) => `${l.name}${l.email && !PLACEHOLDER_EMAIL.test(l.email) ? ` <${l.email}>` : ""}`);
+      throw new Error(`"${w}" matches more than one person: ${names.join(", ")}. Use a full name or email.`);
+    }
+    if (!who.some((x) => sameLogger(x, distinct[0]))) who.push(distinct[0]);
+  }
+  return { keep: (f) => (byFile.get(f) ?? []).some((l) => who.some((x) => sameLogger(x, l))), who };
+}
+
+const metByArgs = {
+  met_by: {
+    type: "array",
+    items: { type: "string" },
+    description: 'Only contacts these people met at this event: names, emails, or "me" (e.g. ["me", "Michael"]). Omit for everyone the team met.',
+  },
+  owner: {
+    type: "string",
+    description: 'Who owns each contact in the CRM: "met_by" (default: the teammate who first logged them) or "me" (the person calling).',
+  },
+};
+
+function ownerFor(front: Front, owner: unknown, person: Person): string {
+  return owner === "me" ? crmEmail(person) : String(front.first_logged_by_email ?? "");
+}
+
+function ownerLabel(email: string, name?: string): string {
+  return email && !PLACEHOLDER_EMAIL.test(email)
+    ? `owner: the HubSpot user with email ${email}`
+    : `owner: unknown (${name ? `${name} has` : "whoever logged it has"} no work email saved; ask who should own it)`;
+}
+
 // ---------------------------------------------------------------- tools
 
 const eventArg = {
@@ -527,19 +690,21 @@ const BASE_TOOLS = [
   {
     name: "export_hubspot_csv",
     description:
-      "Write every contact still pending for HubSpot into a CSV with HubSpot's import column names (Contact owner is the logger's HubSpot email), commit it under exports/, and return it. Use at stopping points when the HubSpot connection isn't working, so the team can bulk-import later. Contacts stay pending until mark_crm_synced.",
+      "Write every contact still pending for HubSpot into a CSV with HubSpot's import column names (Contact owner is the logger's HubSpot email, or the caller's with owner: me), commit it under exports/, and return it. met_by narrows it to the contacts certain teammates met. Use at stopping points when the HubSpot connection isn't working, so the team can bulk-import later. Contacts stay pending until mark_crm_synced.",
     inputSchema: {
       type: "object",
       properties: {
         include_synced: { type: "boolean", description: "Include contacts already in HubSpot (default false)" },
+        ...metByArgs,
         ...eventArg,
       },
     },
   },
   {
     name: "crm_queue",
-    description: "Contacts not yet in HubSpot (hubspot_status pending), with their fields, ready to propose as HubSpot records.",
-    inputSchema: { type: "object", properties: { ...eventArg } },
+    description:
+      'What to put in HubSpot for this event: contacts not yet there (with their fields, everyone who met them, and the owner to use), and conversations not yet logged (each touchpoint to become a HubSpot meeting, and each follow-up a task). Everyone the team met by default; met_by narrows it ("sync the people I met" is met_by ["me"]; "mine and Michael\'s" is ["me", "Michael"]).',
+    inputSchema: { type: "object", properties: { ...metByArgs, ...eventArg } },
     annotations: { readOnlyHint: true },
   },
   {
@@ -556,9 +721,33 @@ const BASE_TOOLS = [
       required: ["path", "hubspot_id"],
     },
   },
+  {
+    name: "mark_touchpoints_synced",
+    description:
+      "Record that conversations from crm_queue are now in HubSpot: each touchpoint's meeting (or note, if meetings couldn't be created) and, if it had a follow-up, its task. Call only after HubSpot returned the IDs. Keeps the next crm_queue from proposing them again.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        touchpoints: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", description: "The touchpoint id from crm_queue" },
+              activity_id: { type: "string", description: "The HubSpot meeting (or note) ID" },
+              task_id: { type: "string", description: "The HubSpot task ID for its follow-up, if one was created" },
+            },
+            required: ["id", "activity_id"],
+          },
+        },
+        ...eventArg,
+      },
+      required: ["touchpoints"],
+    },
+  },
 ];
 
-const TOOLS = [...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS, ...BRAND_TOOLS, ...EVENT_TOOLS, ...UPLOAD_TOOLS];
+const TOOLS = [...ONBOARDING_TOOLS, ...ENRICH_TOOLS, ...BASE_TOOLS, ...CRM_TOOLS, ...LOCATION_TOOLS, ...SKILL_TOOLS, ...STARTER_TOOLS, ...SLIDE_TOOLS, ...BRAND_TOOLS, ...EVENT_TOOLS, ...UPLOAD_TOOLS];
 
 // Most tools answer in text; a few (view_slide) return MCP content blocks, e.g. an image.
 export type Handler = (args: any, env: Env, person: Person) => Promise<string | { content: any[] }>;
@@ -566,6 +755,8 @@ export type Handler = (args: any, env: Env, person: Person) => Promise<string | 
 const ev = (args: any, env: Env) => (args?.event ? String(args.event) : env.DEFAULT_EVENT);
 
 const HANDLERS: Record<string, Handler> = {
+  ...ONBOARDING_HANDLERS,
+  ...ENRICH_HANDLERS,
   ...CRM_HANDLERS,
   ...LOCATION_HANDLERS,
   ...SKILL_HANDLERS,
@@ -577,7 +768,9 @@ const HANDLERS: Record<string, Handler> = {
   async whoami(_args, env, person) {
     const [primary, ...others] = identities(person);
     const also = others.length ? ` Also known as: ${others.join(", ")}.` : "";
-    return `You are ${person.name} <${primary}> (commits are authored as this address).${also} HubSpot knows you as ${crmEmail(person)}. Current event: ${env.DEFAULT_EVENT}.`;
+    const company = person.company ? ` You represent ${person.company}.` : "";
+    const guest = person.guest ? " This connector has no name yet: run get_started." : "";
+    return `You are ${person.name} <${primary}> (commits are authored as this address).${also}${company} HubSpot knows you as ${crmEmail(person)}. Current event: ${env.DEFAULT_EVENT}.${guest}`;
   },
 
   async list_events(_args, env) {
@@ -751,7 +944,10 @@ const HANDLERS: Record<string, Handler> = {
         "Event-hog file",
       ];
       const lines = [cols.map(csvCell).join(",")];
-      for (const f of (await walk(ws, "contacts")).filter((x) => x.endsWith(".md"))) {
+      const { files, byFile } = await contactLoggers(env, event, ws);
+      const filter = metByFilter(args?.met_by, person, byFile);
+      for (const f of files) {
+        if (filter && !filter.keep(f)) continue;
         const { front } = parseFront((await read(ws, f)) ?? "");
         if (!args?.include_synced && (front.hubspot_status || "pending") !== "pending") continue;
         // HubSpot imports want first and last name apart. Split on the first
@@ -761,14 +957,16 @@ const HANDLERS: Record<string, Handler> = {
         const cut = name.indexOf(" ");
         const first = cut > 0 ? name.slice(0, cut) : name;
         const last = cut > 0 ? name.slice(cut + 1) : "";
+        const owner = ownerFor(front, args?.owner, person);
         lines.push(
-          [front.email, first, last, front.company, front.title, front.phone, front.linkedin, front.first_logged_by_email, front.event, front.priority, f]
+          [front.email, first, last, front.company, front.title, front.phone, front.linkedin, PLACEHOLDER_EMAIL.test(owner) ? "" : owner, front.event, front.priority, f]
             .map(csvCell)
             .join(","),
         );
         rows++;
       }
-      if (!rows) throw new Error("Nothing pending for HubSpot, so there's nothing to export.");
+      const whose = filter ? ` met by ${filter.who.map((l) => l.name).join(" or ")}` : "";
+      if (!rows) throw new Error(`Nothing pending for HubSpot${whose}, so there's nothing to export.`);
       const t = now(env);
       const path = `exports/hubspot-contacts_${t.date}_${t.iso.slice(11, 16).replace(":", "")}.csv`;
       const csv = lines.join("\n") + "\n";
@@ -781,17 +979,96 @@ const HANDLERS: Record<string, Handler> = {
     });
   },
 
-  async crm_queue(args, env) {
-    const ws = await open(env, ev(args, env), "read");
+  async crm_queue(args, env, person) {
+    const event = ev(args, env);
+    const ws = await open(env, event, "read");
+    const { files, byFile } = await contactLoggers(env, event, ws);
+    const filter = metByFilter(args?.met_by, person, byFile);
     const rows: string[] = [];
-    for (const f of (await walk(ws, "contacts")).filter((x) => x.endsWith(".md"))) {
+    const contactRef = new Map<string, string>();
+    for (const f of files) {
+      if (filter && !filter.keep(f)) continue;
       const { front } = parseFront((await read(ws, f)) ?? "");
-      if ((front.hubspot_status || "pending") !== "pending") continue;
+      const pending = (front.hubspot_status || "pending") === "pending";
+      contactRef.set(f, pending ? `${front.name} (${f}; create the contact first)` : `${front.name} (HubSpot contact ${front.hubspot_id})`);
+      if (!pending) continue;
       const fields = CONTACT_FIELDS.filter((k) => front[k]).map((k) => `${k}: ${front[k]}`).join(" · ");
-      const by = front.first_logged_by_email ? `${front.first_logged_by} <${front.first_logged_by_email}>` : front.first_logged_by || "?";
-      rows.push(`- ${f} — ${fields} · first logged by ${by} (HubSpot owner: the HubSpot user with that email)`);
+      const met = (byFile.get(f) ?? []).map((l) => `${l.name}${l.email && !PLACEHOLDER_EMAIL.test(l.email) ? ` <${l.email}>` : ""}`).join(", ") || "?";
+      const owner = ownerFor(front, args?.owner, person);
+      rows.push(`- ${f} — ${fields} · met by ${met} · ${ownerLabel(owner)}`);
     }
-    return rows.length ? `${rows.length} contact(s) pending for HubSpot:\n${rows.join("\n")}` : "Nothing pending for HubSpot.";
+
+    // Conversations: one HubSpot meeting per touchpoint, owned by whoever had
+    // it; one task per open follow-up, owned like the contact.
+    const convos: string[] = [];
+    try {
+      const inst = await env.CRM.prepare("SELECT name FROM event_instances WHERE slug = ?").bind(event).first();
+      const { results } = await env.CRM.prepare(
+        `SELECT i.id, i.artifact_path AS path, i.occurred_at, i.logged_by, i.logged_by_email, i.where_met, i.notes, i.follow_up, i.follow_up_done_at,
+                (SELECT external_id FROM crm_links WHERE entity_type = 'interaction' AND entity_id = i.id AND system = 'hubspot') AS activity_id,
+                (SELECT external_id FROM crm_links WHERE entity_type = 'follow_up' AND entity_id = i.id AND system = 'hubspot') AS task_id
+           FROM interactions i JOIN event_instances e ON e.id = i.event_instance_id
+          WHERE e.slug = ? ORDER BY i.occurred_at`,
+      )
+        .bind(event)
+        .all();
+      for (const r of (results ?? []) as any[]) {
+        if (!contactRef.has(r.path)) continue;
+        const needsTask = r.follow_up && !r.follow_up_done_at && !r.task_id;
+        if (r.activity_id && !needsTask) continue;
+        const taskOwner = args?.owner === "me" ? crmEmail(person) : String(r.logged_by_email ?? "");
+        const parts = [
+          `touchpoint ${r.id}`,
+          `with ${contactRef.get(r.path)}`,
+          String(r.occurred_at).slice(0, 16).replace("T", " ") + " UTC",
+          r.activity_id
+            ? `meeting already in HubSpot (${r.activity_id})`
+            : `meeting "Met at ${inst?.name ?? event}", ${ownerLabel(String(r.logged_by_email ?? ""), r.logged_by)}`,
+          r.where_met ? `where: ${r.where_met}` : null,
+          r.notes && !r.activity_id ? `notes: ${r.notes}` : null,
+          needsTask ? `TASK: "${r.follow_up}", ${ownerLabel(taskOwner)}` : null,
+        ].filter(Boolean);
+        convos.push(`- ${parts.join(" · ")}`);
+      }
+    } catch {
+      // No database: contacts can still be synced from the files.
+    }
+
+    const whose = filter ? ` met by ${filter.who.map((l) => l.name).join(" or ")}` : "";
+    if (!rows.length && !convos.length) return `Nothing${whose} pending for HubSpot.`;
+    return [
+      rows.length ? `${rows.length} contact(s)${whose} pending for HubSpot:\n${rows.join("\n")}` : `No contacts${whose} pending for HubSpot.`,
+      convos.length
+        ? `${convos.length} conversation(s) to log in HubSpot. Each becomes a completed meeting (that title, start time as shown, body: where + notes) associated with the contact, plus a task for a follow-up (due date: ask once for all), then mark_touchpoints_synced:\n${convos.join("\n")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  },
+
+  async mark_touchpoints_synced(args, env, person) {
+    const list = (Array.isArray(args?.touchpoints) ? args.touchpoints : []).filter((t: any) => t?.id && t?.activity_id);
+    if (!list.length) throw new Error("Give at least one touchpoint with its id and the HubSpot activity_id.");
+    const ids = list.map((t: any) => String(t.id));
+    const { results } = await env.CRM.prepare(`SELECT id FROM interactions WHERE id IN (${ids.map(() => "?").join(",")})`)
+      .bind(...ids)
+      .all();
+    const known = new Set(((results ?? []) as any[]).map((r) => r.id));
+    const unknown = ids.filter((id: string) => !known.has(id));
+    if (unknown.length) throw new Error(`No touchpoint with id ${unknown.join(", ")}. Use the ids crm_queue shows.`);
+    const at = new Date().toISOString();
+    const link = (type: string, id: string, ext: string) =>
+      env.CRM.prepare(
+        `INSERT INTO crm_links (entity_type, entity_id, system, external_id, synced_at, synced_by) VALUES (?, ?, 'hubspot', ?, ?, ?)
+         ON CONFLICT (entity_type, entity_id, system) DO UPDATE SET external_id = excluded.external_id, synced_at = excluded.synced_at, synced_by = excluded.synced_by`,
+      ).bind(type, id, ext, at, person.name);
+    const stmts = list.flatMap((t: any) => [
+      link("interaction", String(t.id), String(t.activity_id)),
+      ...(t.task_id ? [link("follow_up", String(t.id), String(t.task_id))] : []),
+    ]);
+    await env.CRM.batch(stmts);
+    const tasks = list.filter((t: any) => t.task_id).length;
+    return `Recorded ${list.length} conversation(s) as in HubSpot${tasks ? `, with ${tasks} follow-up task(s)` : ""}.`;
   },
 
   async contacts_csv(args, env, person) {
@@ -854,8 +1131,8 @@ const BASE_PROMPTS = [
   {
     name: "crm-sync",
     description: "Move pending event contacts into HubSpot, with review.",
-    text: "Run crm_queue in event-hog. For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each contact's owner to the HubSpot user whose email is shown as who logged it (use search_owners). Show me one table of what you'd create or update in HubSpot, including the owner. After I approve, create them, then call mark_crm_synced for each with the HubSpot ID. If HubSpot isn't connected or its calls fail, run export_hubspot_csv instead and tell me where the file is.",
+    text: "First ask me two things in one message, unless I've already said: whose contacts (everyone the team met, just the people I met, or mine plus named teammates), and who should own them in HubSpot (whoever met them, or me). Then run crm_queue in event-hog with met_by (omit it for everyone; \"me\" means me) and owner (\"me\" if I want to own them all). For each pending contact, check HubSpot for an existing contact (by email, then name and company). Set each owner to the HubSpot user with the owner email shown (use search_owners); if it says the owner is unknown, ask me. Show me what you'd do in HubSpot in one review: a table of contacts to create or update (with owner), then the conversations to log as meetings and the follow-up tasks (with owners), and ask once for the tasks' due date. After I approve, create the contacts and call mark_crm_synced for each with the HubSpot ID; then create each meeting (completed, at the time shown, associated with the contact) and task (associated with the contact), and call mark_touchpoints_synced with their IDs. If your HubSpot connector can't create meetings or tasks, tell me and offer notes instead. If HubSpot isn't connected or its calls fail, run export_hubspot_csv instead (same met_by and owner; it carries contacts only) and tell me where the file is.",
   },
 ];
 
-const PROMPTS = [...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS, ...SLIDE_PROMPTS, ...BRAND_PROMPTS];
+const PROMPTS = [...ONBOARDING_PROMPTS, ...BASE_PROMPTS, ...SKILL_PROMPTS, ...STARTER_PROMPTS, ...SLIDE_PROMPTS, ...BRAND_PROMPTS];

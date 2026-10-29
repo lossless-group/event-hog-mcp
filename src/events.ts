@@ -9,7 +9,8 @@
 import git from "isomorphic-git";
 import http from "isomorphic-git/http/web";
 import type { Env, Handler, Person } from "./index";
-import { DIR, open, read, walk, slug, people } from "./index";
+import { DIR, slug, people } from "./index";
+import { KIT } from "./kit.generated";
 import { MemoryFS } from "./memory-fs";
 import { ensureOrg } from "./crm";
 import { ensureLocation, linkLocationStmt, addEdge } from "./locations";
@@ -205,11 +206,11 @@ export const EVENT_HANDLERS: Record<string, Handler> = {
     } catch {}
     if (exists) throw new Error(`There's already a workspace called ${name}. Use it (event: "${name}"), or pass a different slug.`);
 
-    // The kit's template, as it is today.
-    const kit = await open(env, env.KIT_REPO, "read");
-    const paths = (await walk(kit, TEMPLATE)).filter((p) => p !== `${TEMPLATE}/prep/event.md`);
+    // The kit's template, as bundled into this deploy.
+    const paths = Object.keys(KIT).filter((p) => p.startsWith(`${TEMPLATE}/`) && p !== `${TEMPLATE}/prep/event.md`);
     if (!paths.length) throw new Error(`The kit has no ${TEMPLATE}/. Nothing to start from.`);
-    const team = a.team || Object.values(people(env)).map((p) => p.name).join(" · ");
+    const listed = Object.values(people(env)).map((p) => p.name);
+    const team = a.team || (person.key && people(env)[person.key] ? listed.join(" · ") : `${person.name}${person.company ? ` (${person.company})` : ""}`);
     const fill: Record<string, string> = {
       "Event name": a.name,
       City: a.city || a.venue || "location TBD",
@@ -220,7 +221,7 @@ export const EVENT_HANDLERS: Record<string, Handler> = {
     const date = new Intl.DateTimeFormat("en-CA", { timeZone: a.time_zone }).format(new Date());
     const files: Record<string, string> = {};
     for (const p of paths) {
-      let text = (await read(kit, p)) ?? "";
+      let text = KIT[p] ?? "";
       if (p === `${TEMPLATE}/README.md`) text = text.replace(/\{\{([^}]+)\}\}/g, (m, key) => fill[key.trim()] ?? m);
       files[p.slice(TEMPLATE.length + 1)] = text;
     }
@@ -240,7 +241,7 @@ export const EVENT_HANDLERS: Record<string, Handler> = {
       const oid = await git.commit({
         fs,
         dir: DIR,
-        message: `new event: ${a.name}\n\nStarted from ${env.KIT_REPO}/${TEMPLATE}.`,
+        message: `new event: ${a.name}\n\nStarted from kit/${TEMPLATE}.`,
         author: { name: person.name, email: person.email },
       });
       const secret = String(created.token).split("?expires=")[0];
