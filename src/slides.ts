@@ -26,7 +26,7 @@
 // verify, alt text, and commentary kept apart from the transcription.
 
 import type { Env, Front, Handler, Person, Workspace } from "./index";
-import { DIR, open, read, walk, write, parseFront, renderFront, slug, now, people } from "./index";
+import { DIR, open, read, walk, write, parseFront, renderFront, slug, now, people, memberPerson } from "./index";
 import { pendingIn } from "./brand";
 
 const ROOT = "slides";
@@ -48,7 +48,11 @@ export async function captureToken(key: string): Promise<string> {
 }
 
 export async function personForToken(env: Env, token: string): Promise<{ key: string; person: Person } | null> {
-  for (const [key, person] of Object.entries(people(env))) if ((await captureToken(key)) === token) return { key, person };
+  for (const [key, person] of Object.entries(people(env))) if ((await captureToken(key)) === token) return { key, person: { ...person, key } };
+  try {
+    const row = await env.CRM.prepare("SELECT * FROM members WHERE capture_token = ?").bind(token).first();
+    if (row) return { key: String(row.key), person: memberPerson(row) };
+  } catch {}
   return null;
 }
 
@@ -359,7 +363,7 @@ export const SLIDE_HANDLERS: Record<string, Handler> = {
   },
 
   async slide_capture_link(args, env, person) {
-    const key = Object.entries(people(env)).find(([, p]) => p.email === person.email)?.[0];
+    const key = person.key;
     if (!key) throw new Error("Couldn't find this connector's key.");
     const q = new URLSearchParams();
     if (args?.session) q.set("session", String(args.session));

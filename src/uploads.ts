@@ -18,7 +18,7 @@
 // contact.
 
 import type { Env, Handler, Person } from "./index";
-import { people, slug, now, write } from "./index";
+import { slug, now, write } from "./index";
 import { addSlides, captureToken, personForToken } from "./slides";
 
 const TTL_SECONDS = 15 * 60;
@@ -176,7 +176,7 @@ export const UPLOAD_HANDLERS: Record<string, Handler> = {
     if (!TYPES[f]) throw new Error(`Can't take a .${f || "?"} file. Allowed: ${Object.keys(TYPES).join(", ")}.`);
     if (kind === "slide" && !SLIDE_EXTS.includes(f)) throw new Error("A slide must be JPEG, PNG or WebP. Convert it first (Pillow), then ask again with the new name.");
 
-    const key = Object.entries(people(env)).find(([, p]) => p.email === person.email)?.[0];
+    const key = person.key;
     if (!key) throw new Error("Couldn't find this connector's key.");
 
     const ticket: Ticket = {
