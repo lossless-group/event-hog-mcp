@@ -4,13 +4,12 @@ import pagefind from 'astro-pagefind';
 import sitemap from '@astrojs/sitemap';
 
 // Splash for event-hog-mcp.
-// Hosted on GitHub Pages from lossless-group/event-hog-mcp.
-// Live URL: https://lossless-group.github.io/event-hog-mcp/
-//
-// If a custom domain is added later, set `site` to that domain and `base` to '/'.
+// Hosted on GitHub Pages from lossless-group/event-hog-mcp, at the custom
+// domain eventhog.cc (DNS on Cloudflare, DNS-only records pointing at GitHub).
+// The old lossless-group.github.io/event-hog-mcp/ address redirects here.
 export default defineConfig({
-  site: 'https://lossless-group.github.io',
-  base: '/event-hog-mcp/',
+  site: 'https://eventhog.cc',
+  base: '/',
   trailingSlash: 'ignore',
 
   integrations: [

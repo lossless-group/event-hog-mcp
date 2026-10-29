@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lossless-group.github.io/event-hog-mcp/sitemap-index.xml
+Sitemap: https://eventhog.cc/sitemap-index.xml

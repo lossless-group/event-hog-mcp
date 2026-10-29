@@ -1,7 +1,7 @@
 # event-hog splash
 
 The GitHub Pages site for event-hog-mcp:
-**https://lossless-group.github.io/event-hog-mcp/**
+**https://eventhog.cc**
 
 It's laid out like a conference: a lanyard badge in the hero, what event-hog
 does as the program, the three ways to run it as passes, and the workspace as
@@ -13,9 +13,17 @@ the keynote.
 ```bash
 cd splash
 pnpm install --ignore-workspace
-pnpm dev            # http://localhost:4321/event-hog-mcp/
+pnpm dev            # http://localhost:4321/
 pnpm build && pnpm preview   # to try search; the index is built at build time
 ```
+
+## Domain
+
+`eventhog.cc`, registered on Cloudflare. DNS has four A records for `@`
+(185.199.108.153 through .111.153, GitHub Pages) and a CNAME for `www` to
+`lossless-group.github.io`, all **DNS only** (grey cloud): GitHub has to
+see the domain directly to issue its HTTPS certificate. The custom domain
+is set in the repo's Pages settings.
 
 ## Deploy
 
@@ -42,8 +50,8 @@ section. If one changes, change the other.
 
 OpenPanel, production builds only (`src/components/Analytics.astro`). It
 reads the repo Variable `OPENPANEL_CLIENT_ID`; without it, no script ships.
-The OpenPanel client must list `https://lossless-group.github.io` as a
-supported domain, or every event is rejected with a 401.
+The OpenPanel client must list `https://eventhog.cc` as a supported domain,
+or every event is rejected with a 401.
 
 ## Isolation from the server
 
