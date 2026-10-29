@@ -32,10 +32,18 @@ with GitHub Pages (source: GitHub Actions). It runs only when `splash/`,
 | Changelog pages | `../changelog/*.md` |
 | Context pages | `../context-v/**/*.md`. Files with `publish: false` are skipped |
 | Titles and descriptions | `src/lib/seo.ts` |
-| Share image | `public/og/event-hog__Share-Banner.jpg`, a 1200×630 screenshot of the hero |
+| Share images | `public/ogimage__Event-Hog--{Banner,BannerTall,BannerTallMax,Portrait,PortraitTall,Square}.jpg`, rendered from `og-source/og.html?f=<format>` at each format's exact size. Older versions go in `.ogimage-archive/` |
+| Icons | `public/favicon.svg` (the pig) and `public/apple-touch-icon.png` (180px, rasterized from it) |
 
 Keep the fine print in step with the README's "What the server guarantees"
 section. If one changes, change the other.
+
+## Analytics
+
+OpenPanel, production builds only (`src/components/Analytics.astro`). It
+reads the repo Variable `OPENPANEL_CLIENT_ID`; without it, no script ships.
+The OpenPanel client must list `https://lossless-group.github.io` as a
+supported domain, or every event is rejected with a 401.
 
 ## Isolation from the server
 
