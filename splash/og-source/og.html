@@ -106,7 +106,7 @@
   body.landscape .hang { align-self: start; transform: rotate(-2deg) scale(1.02); }
   body.landscape .lanyard { height: 120px; }
 
-  /* ─── Tall and square: lanyard from the top, badge low, headline under ─ */
+  /* ─── Tall: lanyard from the top, badge low, headline under ─ */
   body.tall .stage { grid-template-rows: auto auto; align-content: end; justify-items: center; padding: 0 60px var(--pad-b) 74px; gap: var(--gap); }
   body.tall .hang { transform: rotate(-2deg) scale(var(--k)); transform-origin: 50% 100%; }
   body.tall .lanyard { height: var(--lan); }
@@ -119,7 +119,7 @@
   <div class="stage">
     <div class="copy">
       <p class="eyebrow"><img src="../public/favicon.svg" alt="" /> event-hog · open source · Claude &amp; Codex</p>
-      <h1><span>Work the room.</span><span class="hot">Keep everything.</span></h1>
+      <h1><span class="line"><span>Work the</span> <span>room.</span></span><span class="line hot"><span>Keep</span> <span>everything.</span></span></h1>
       <p class="url">lossless-group.github.io/event-hog-mcp</p>
     </div>
     <div class="hang">
@@ -157,7 +157,7 @@
   // Format → canvas size and layout knobs.
   const F = {
     'banner':          { w: 1200, h: 630,  mode: 'landscape' },
-    'square':          { w: 1200, h: 1200, mode: 'tall', k: 1.25, lan: 150, h1: '104px', gap: '56px', padB: '70px' },
+    'square':          { w: 1200, h: 1200, mode: 'tall', k: 1.78, lan: 60, h1: '118px', gap: '34px', padB: '44px' },
     'banner-tall':     { w: 1200, h: 1600, mode: 'tall', k: 1.6,  lan: 300, h1: '128px', gap: '96px', padB: '110px' },
     'banner-tall-max': { w: 1200, h: 1800, mode: 'tall', k: 1.7,  lan: 360, h1: '134px', gap: '110px', padB: '130px' },
     'portrait':        { w: 1080, h: 1350, mode: 'tall', k: 1.4,  lan: 230, h1: '112px', gap: '80px', padB: '90px' },
