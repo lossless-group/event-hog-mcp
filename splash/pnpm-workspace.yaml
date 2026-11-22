@@ -10,3 +10,8 @@ packages: []
 onlyBuiltDependencies:
   - esbuild
   - sharp
+
+# Vite 8.3 still resolves esbuild 0.27.x, which has a dev-server file-read
+# advisory (GHSA, fixed in 0.28.1). Vite's peer range allows ^0.28.
+overrides:
+  esbuild: ^0.28.1
