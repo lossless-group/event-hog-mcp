@@ -5,8 +5,10 @@ description: Turn a speaker or panelist's thin event-app bio (often a screenshot
 
 # Augment Speakers and Panelists
 
-> **Status: Draft (2026-10-26).** Written for event-hog during the 7x24
-> Exchange Fall Conference; not yet run end to end against a real speaker.
+> **Status: Draft (2026-10-26, revised 2026-11-22).** Written for event-hog
+> during the 7x24 Exchange Fall Conference. First run end to end on the NAESCO
+> R3 2026 agenda (45 speakers), where video was skipped because nothing made
+> it a separate search; step 5 now does.
 
 Event apps give you a name, a title, a company, and two lines of bio, usually
 as a screenshot. Listening and taking notes at the same time is hard, so the
@@ -74,11 +76,13 @@ Instagram or TikTok only if they're clearly professional.
 - No personal or family accounts, home addresses, or personal phone numbers,
   even if found. This is professional information only.
 
-**Then the organization's accounts:** its **LinkedIn company page** and its
-**X account** (plus YouTube if it posts talks). Posts about the session tag
-both the speaker and the organization, so both need to be ready. Take them
-from the organization's own site (footer links) or a confirmed search
-result, never from a guess at the name.
+**Then the organization's accounts:** its **website** (the homepage), its
+**LinkedIn company page** and its **X account** (plus YouTube if it posts
+talks). Posts about the session tag both the speaker and the organization,
+and blog drafts link to the organization's site, so all of them need to be
+ready. Take them from the organization's own site (footer links) or a
+confirmed search result, never from a guess at the name. Save the website as
+an `organization_socials` entry with platform `Website`.
 
 ## 3. Features, then 4. mentions
 
@@ -103,11 +107,33 @@ sites), plus podcasts.
 For each item: **date, outlet, title, URL**, and **one line on why it
 matters for this session**.
 
-## 5. Video
+## 5. Video (its own search, every time)
 
 Talks, panels, interviews, webinars: usually YouTube, sometimes Vimeo or the
-event's own site. Same rules: relevance to the session, then recency, capped
-(default 5). Include date, title, channel, URL, and length if shown.
+event's own site. A speaker's earlier talks are the fastest way to learn how
+they think, and the best thing to link in a post about them.
+
+**Videos almost never show up in a general search for the name**, which
+returns LinkedIn and press first. So video is a separate step with its own
+queries, never a by-product of steps 2–4:
+
+1. `"<Name>" site:youtube.com`, then `"<Name>" "<Organization>" site:youtube.com`
+   if the name is common.
+2. `"<Name>" <session topic> talk OR panel OR webinar OR keynote` (catches
+   Vimeo, conference sites, association webinars).
+3. The organization's own YouTube channel, and the event's channel for past
+   years, when you found them in step 2.
+
+Use the configured research tools for this (Firecrawl search takes
+`site:youtube.com`; so does the client's built-in search). Same identity rule
+as everywhere: the title, description or channel must match the anchor.
+Same selection: relevance to the session, then recency, capped (default 5).
+Include date, title, channel, URL, and length if shown.
+
+**"No video found" is only allowed after these searches ran.** Write the
+queries you tried in `not_found` (e.g. *"No video: searched '"Jane Doe"
+site:youtube.com' and '"Jane Doe" grid panel'."*). Never write "no video
+found" for a step you skipped.
 
 ## 6. Output, then save
 
@@ -145,8 +171,13 @@ Then **save it**:
 - **Dates matter.** An undated item goes after dated ones and is marked
   *(undated)*.
 - **Speed over completeness at the event.** If time is short, do social
-  accounts and the 3 most relevant features first, save, and offer to finish
-  later.
+  accounts, the 3 most relevant features, **and the video search** (it's one
+  or two queries) first, save, and offer to finish later. Video is not the
+  part to drop.
+- **Many speakers at once (an agenda).** Save a baseline for everyone from the
+  agenda, then research the ones who matter most. A researched speaker gets
+  all four steps, video included. A baseline says plainly that socials,
+  press and video aren't researched yet.
 - **Speakers aren't contacts.** A profile doesn't mean the team has met them.
   Use `log_contact` only after a real conversation.
 

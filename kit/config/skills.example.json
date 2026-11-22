@@ -21,7 +21,8 @@
         "Hallway and booth conversations are private unless the note says shareable",
         "Never name a prospect or say we met them without their OK",
         "Nothing is posted from event-hog: drafts only, a person posts"
-      ]
+      ],
+      "competitors": ["<Optional seed list: known competitors, never linked or tagged. Agents also judge new ones themselves>"]
     },
     "capture-slides": {
       "image_host": {

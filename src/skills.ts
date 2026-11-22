@@ -133,7 +133,7 @@ export const SKILL_TOOLS = [
         socials: { type: "array", items: { type: "object", properties: { platform: { type: "string" }, url: { type: "string" } }, required: ["url"] } },
         organization_socials: {
           type: "array",
-          description: "The organization's own accounts (LinkedIn company page, X, YouTube…), found and confirmed, for tagging it in posts",
+          description: "The organization's website (platform: Website) and own accounts (LinkedIn company page, X, YouTube…), found and confirmed, for linking it in drafts and tagging it in posts",
           items: { type: "object", properties: { platform: { type: "string" }, url: { type: "string" } }, required: ["url"] },
         },
         features: {
@@ -146,6 +146,7 @@ export const SKILL_TOOLS = [
         },
         videos: {
           type: "array",
+          description: "Talks, panels, interviews. Found with their own search (site:youtube.com), not from the general name search; if none, say what you searched in not_found",
           items: { type: "object", properties: { date: { type: "string" }, title: { type: "string" }, channel: { type: "string" }, url: { type: "string" }, length: { type: "string" } }, required: ["url"] },
         },
         not_found: { type: "string", description: "What was looked for and not found" },
@@ -291,7 +292,13 @@ export const SKILL_HANDLERS: Record<string, Handler> = {
           text = `${head}\n\n## Research\n\n${block}`;
         }
         await ws.fs.promises.writeFile(`${DIR}/${path}`, text);
-        return { paths: [path], summary: `Speaker profile saved: ${path} (${added.length} new link(s)).` };
+        // Video is the step agents skip: a general search for the name rarely
+        // surfaces it. Flag a save with no videos and no word on a video search.
+        const videoGap =
+          !links(args.videos).length && !/video|youtube/i.test(String(args.not_found ?? ""))
+            ? ` No videos saved, and not_found doesn't say a video search ran. Run step 5 of augment-speakers-panelists ("${args.name}" site:youtube.com, then name + session topic) and save again, or record the queries you tried in not_found.`
+            : "";
+        return { paths: [path], summary: `Speaker profile saved: ${path} (${added.length} new link(s)).${videoGap}` };
       },
       async (oid) => {
         const at = new Date().toISOString();

@@ -179,7 +179,7 @@ STARTER_TOOLS.push(
   {
     name: "save_draft",
     description:
-      "Start a post draft from the parallel-content-generation-starters skill: a tweet, thread, LinkedIn post, or blog post, written in the voice the kind calls for (get_config for the voices). Anticipated drafts leave [gaps] for what will actually be said; never invent quotes or numbers. Saves drafts/<date>_<kind>_<title>.md. Nothing is posted.",
+      "Start a post draft from the parallel-content-generation-starters skill: a tweet, thread, LinkedIn post, or blog post, written in the voice the kind calls for (get_config for the voices). Anticipated drafts leave [gaps] for what will actually be said; never invent quotes or numbers. Link each organization the draft names to its own site at first mention (especially speakers' organizations), but never link or tag a competitor (get_config's competitors list, else your judgment: anyone selling something like ours to the same buyers; name the ones you left unlinked). Saves drafts/<date>_<kind>_<title>.md. Nothing is posted.",
     inputSchema: {
       type: "object",
       properties: {

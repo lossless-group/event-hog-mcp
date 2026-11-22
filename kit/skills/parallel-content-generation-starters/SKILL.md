@@ -5,7 +5,8 @@ description: While someone works an event, turn their short, vague, thumb-typed 
 
 # Parallel Content Generation: Starters
 
-> **Status: Draft (2026-10-26).** Written for event-hog during the 7x24
+> **Status: Draft (2026-10-26, revised 2026-11-22: link out to named
+> organizations, never competitors).** Written for event-hog during the 7x24
 > Exchange Fall Conference. Flash cards and post drafts are built; the
 > other starters below save as notes until they earn their own tools.
 
@@ -157,6 +158,42 @@ and counts characters.
   posts it themselves. `posted` is set only on their word.
 - **Offer, don't flood.** One line: *"2 post angles saved for Ari's panel,
   one personal, one for the blog."*
+
+**Link out to the organizations you name.** Part of the point of event
+content is visibility with the people we write about: an organization that
+sees itself linked is likelier to notice, reshare and remember us. So every
+draft links the organizations it names, **especially speakers'
+organizations**, plus the host, sponsors, partners and public agencies.
+
+- **Blog posts and LinkedIn:** link the organization's own website at its
+  **first mention**, once per piece, on the organization's name. Where a
+  speaker has a public talk or interview that fits (from their profile's
+  Video or Features), link that too.
+- **Tweets and threads:** tag the organization's X handle (see
+  `references/live-posting.md`); a link is optional.
+- **Where the URL comes from:** the speaker profile's Organization section
+  (`Website`, then LinkedIn), or the organization's own site found in
+  research. Never build a URL from the name. If there's no confirmed URL,
+  name the organization in plain text and add it to the draft's open gaps.
+- **Never link or tag a competitor.** We don't hand competitors search
+  ranking or reach. Name them in plain text when the piece needs them, or
+  leave them out.
+- **Spotting competitors is your judgment call.** Conferences are often
+  where the team first hears of a competitor, so no list will be complete.
+  Start from what's known: the `competitors` list in `get_config` for this
+  skill (if any) and anyone the prep map files under competitor watch. Then
+  judge the rest yourself: an organization that sells something like what
+  our company sells, to the same buyers, is a competitor, even if it's new
+  to us. Know what our company sells first (the company voice's `who`, the
+  prep map's lens, the company's site). Vendors we'd sit on top of,
+  customers, partners and public agencies are not competitors.
+- **Say which ones you judged.** In the one-line summary, name every
+  organization you left unlinked and why: *"Not linked: Acme Analytics
+  (sells M&V software to ESCOs, reads as a competitor)."* The person
+  corrects you in one word. A competitor you spotted that isn't on any list
+  yet goes in a short `add_note` (kind `idea`) so the team hears about it.
+- **Name, don't endorse.** A link is visibility, not a recommendation. The
+  sentence around it stays factual.
 
 ## 4. Other starters (save with `add_note` until they get tools)
 

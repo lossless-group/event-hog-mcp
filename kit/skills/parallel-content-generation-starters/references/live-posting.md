@@ -19,7 +19,8 @@ the **live post** (during), the **follow-up** (after), and the
   handle from the name; a wrong @ tags a stranger.
 - Same for their **organization**: its X handle and LinkedIn company page
   come from the profile's Organization section. Posts tag both when it fits
-  ("@speaker of @org").
+  ("@speaker of @org"), unless the organization is a competitor: then name it
+  in plain text, untagged (see "Link out" in the main skill).
 - LinkedIn can't be tagged from a link: in a LinkedIn post you type `@` and
   the name, then pick from the list. So the draft records both LinkedIn URLs
   (to open and check the right person and page) and the exact names to type.
