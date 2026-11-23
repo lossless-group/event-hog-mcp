@@ -7,6 +7,9 @@
 # run in CI without an interactive prompt.
 packages: []
 
+minimumReleaseAgeExclude:
+  - '@lossless-group/lfm@0.11.0'
+
 onlyBuiltDependencies:
   - esbuild
   - sharp

@@ -128,3 +128,32 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
+
+/* ─── LFM component bridge ─────────────────────────────────────────────────
+   The renderer components in src/components/markdown/ were copied from
+   astro-knots/packages/lfm-astro and name that family's tokens. Map them to
+   this splash's palette here instead of editing every copied file. */
+:root {
+  --primary: var(--color-accent);
+  --color-primary: var(--color-accent);
+  --foreground: var(--color-text);
+  --muted-foreground: var(--color-text-dim);
+  --color-text-muted: var(--color-text-dim);
+  --border: var(--color-border);
+  --font-code: var(--font__mono);
+  --lfm-code-foreground: var(--color-text);
+  --figure-width: 100%;
+  --caption-width: 60ch;
+
+  /* Callout accents */
+  --color__graphite-400: var(--color-text-dim);
+  --color__graphite-600: var(--color-text-soft);
+  --color__cyan-vapor: var(--color__stock);
+  --color__lime-terminal: var(--color__go);
+  --color__amber-flare: var(--color__hi-vis);
+  --color__magenta-fuse: var(--color__hog);
+  --color__violet-electric: var(--color__lanyard);
+  --color__violet-deep: var(--color__lanyard-deep);
+  --fx-glow-opacity: 0;
+  --fx-glow-spread: 0px;
+}

@@ -1,5 +1,9 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
+import { parseMarkdown } from '@lossless-group/lfm';
+import AstroMarkdown from '../../components/markdown/AstroMarkdown.astro';
+import Sources from '../../components/markdown/Sources.astro';
+import { wikilinkResolver } from '@lib/wikilinks';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { formatDate, toDate } from '@lib/date';
 
@@ -14,7 +18,12 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+// Rendered with Lossless Flavored Markdown: callouts, directives, wikilinks
+// and hex-code citations, with the citation list drawn by <Sources>.
+const tree = await parseMarkdown(entry.body ?? '', {
+  wikilinks: { resolver: await wikilinkResolver() },
+});
+const citations = (tree as any).data?.citations?.ordered ?? [];
 
 const d = toDate(entry.data.date_modified ?? entry.data.date_updated ?? entry.data.date_created ?? entry.data.date_authored_current_draft ?? entry.data.date_authored_initial_draft ?? entry.data.date_authored_current_draft ?? entry.data.date_authored_initial_draft ?? entry.data.date_authored_current_draft ?? entry.data.date_authored_initial_draft);
 const created = toDate(entry.data.date_created ?? entry.data.date_authored_initial_draft);
@@ -69,8 +78,9 @@ const base = import.meta.env.BASE_URL;
       </header>
 
       <article class="prose entry__body">
-        <Content />
+        <AstroMarkdown node={tree} />
       </article>
+      {citations.length > 0 && <Sources citations={citations} />}
     </div>
   </main>
 </BaseLayout>
